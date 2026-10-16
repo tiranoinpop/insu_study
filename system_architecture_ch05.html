@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<!-- 시스템 아키텍처 노트 5장 : 안정 해시 설계 (원본 : insu_study/system_architecture/ch05_*.md) -->
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>시스템 설계 5장 - 안정 해시</title>
+        <link href="./css/system_architecture.css" rel="stylesheet">
+        <script src="./js/mobile_table.js" defer></script>
+        <script src="./js/mobile_code.js" defer></script>
+    </head>
+    <body>
+        <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch04.html">← 4장</a></p>
+        <h1>5장. 안정 해시 설계</h1>
+        <p>
+            Consistent Hashing. 1장 샤딩의 "재샤딩" 문제를 푸는 기술이다.<br/>
+            <span class="add">보충</span> 표시는 공부 노트에 없던 내용을 보강한 부분이다.
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>1. 해시 키 재배치 문제</h2>
+        <ul>
+            <li>수평 확장에는 요청/데이터를 서버에 <strong>균등하게 분배</strong>해야 한다</li>
+            <li><span class="add">보충</span> 기본 방식 (나머지 연산 해시) :</li>
+        </ul>
+        <pre><code>serverIndex = hash(key) % N    // N = 서버 대수</code></pre>
+        <ul>
+            <li>서버 수가 고정이면 잘 동작하지만, <strong>서버가 추가/삭제되면 N 이 바뀌어 거의 모든 키가 재배치</strong>된다</li>
+            <li><span class="add">보충</span> 예) 서버 4대 중 1대 장애 → <code>% 3</code> 으로 바뀜 → 대부분 엉뚱한 서버로 접속 → <strong>캐시 미스 폭증</strong> → 대규모 장애</li>
+        </ul>
+        <p class="tip">그래서 <strong>안정 해시</strong>를 사용한다.</p>
+
+        <!-- ============================================================ -->
+        <h2>2. 안정 해시란</h2>
+        <div class="key">
+            해시 테이블 크기가 조정될 때 평균적으로 <strong>오직 k/n 개의 키만</strong> 재배치하는 해시 기술<br/>
+            (k = 키의 개수, n = 슬롯(서버)의 개수)
+        </div>
+
+        <!-- ============================================================ -->
+        <h2>3. 해시 링 (hash ring)</h2>
+        <ul>
+            <li><strong>해시 공간</strong> : 해시 함수의 출력 범위. SHA-1 이면 0 ~ 2<sup>160</sup> - 1</li>
+            <li>이 공간의 <strong>양쪽 끝을 구부려 접어</strong> 원형(링)으로 만든다</li>
+            <li>서버와 키를 <strong>같은 균등 분포 해시 함수</strong>로 링 위에 배치 (나머지 연산 없음)</li>
+            <li>키가 저장될 서버 : 키 위치에서 <strong>시계 방향</strong>으로 탐색하다 <strong>처음 만나는 서버</strong></li>
+        </ul>
+        <pre><code>링 위 배치 (시계 방향)
+s0 → k0 → s1 → s2 → s3 → (다시 s0)
+
+k0 는 시계 방향 첫 서버인 s1 에 저장</code></pre>
+        <table>
+            <tr><th>상황</th><th>일어나는 일</th></tr>
+            <tr><td>서버 추가</td><td>새 서버와 바로 앞(반시계) 서버 사이 구간의 키만 새 서버로 이동 → <strong>일부 키만 재배치</strong></td></tr>
+            <tr><td>서버 제거</td><td>제거된 서버의 키만 시계 방향 다음 서버로 이동 → <strong>일부 키만 재배치</strong></td></tr>
+        </table>
+
+        <!-- ============================================================ -->
+        <h2>4. 기본 구현의 두 가지 문제</h2>
+        <table>
+            <tr><th>문제</th><th>설명</th></tr>
+            <tr><td>파티션 크기 불균형</td><td>서버 간 구간(파티션) 크기를 균등하게 유지하기 어렵다 (어떤 서버는 구간이 아주 넓고 어떤 서버는 좁음)</td></tr>
+            <tr><td>키 분포 불균형</td><td>링 위의 키가 균등하게 분포하지 않을 수 있다 (일부 서버에 몰림)</td></tr>
+        </table>
+
+        <!-- ============================================================ -->
+        <h2>5. 가상 노드 (virtual node)</h2>
+        <ul>
+            <li>실제 서버 하나를 링 위에 <strong>여러 개의 가상 노드</strong>로 표현한다</li>
+            <li>서버마다 여러 파티션을 담당 (예: s0 → s0_0, s0_1, s0_2 …)</li>
+            <li>키는 시계 방향으로 만나는 첫 가상 노드가 가리키는 <strong>실제 서버</strong>에 저장</li>
+            <li>가상 노드 수를 <strong>늘릴수록 키 분포가 더 균등</strong>해진다 (표준 편차 감소)</li>
+            <li><span class="add">보충</span> 연구 결과 가상 노드 100~200개면 표준 편차가 평균의 약 5~10%</li>
+            <li><span class="add">보충</span> 트레이드오프 : 가상 노드 데이터를 저장할 공간이 더 필요 → 요구사항에 맞게 튜닝</li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <h2>6. 안정 해시의 이점</h2>
+        <ol>
+            <li>서버 추가/삭제 시 <strong>재배치되는 키의 수가 최소화</strong></li>
+            <li>데이터가 균등하게 분포 → <strong>수평적 규모 확장</strong>이 쉽다</li>
+            <li><strong>핫스팟 키 문제</strong>를 줄인다</li>
+        </ol>
+
+        <h2>7. 실제 사용처 <span class="add">보충</span></h2>
+        <ul>
+            <li>Amazon DynamoDB 의 파티셔닝</li>
+            <li>Apache Cassandra 의 데이터 파티셔닝</li>
+            <li>Discord 채팅 애플리케이션</li>
+            <li>Akamai CDN</li>
+            <li>Google Maglev 네트워크 로드 밸런서</li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <h2>복습 퀴즈 (눌러서 답 확인)</h2>
+        <details>
+            <summary>1. hash(key) % N 방식에서 서버가 하나 줄면?</summary>
+            <p>N 이 바뀌어 대부분의 키가 다른 서버로 재배치된다. 캐시라면 미스가 폭증한다.</p>
+        </details>
+        <details>
+            <summary>2. 안정 해시에서 서버 추가/삭제 시 재배치되는 키의 수는?</summary>
+            <p>평균 k/n 개 (키 개수 / 슬롯 개수).</p>
+        </details>
+        <details>
+            <summary>3. 키가 저장될 서버는 어떻게 정하나?</summary>
+            <p>키의 해시 위치에서 링을 시계 방향으로 탐색해 처음 만나는 서버.</p>
+        </details>
+        <details>
+            <summary>4. 기본 해시 링의 두 가지 문제와 해결책은?</summary>
+            <p>파티션 크기 불균형, 키 분포 불균형 → 가상 노드로 해결.</p>
+        </details>
+        <details>
+            <summary>5. 가상 노드를 늘리면 장점과 단점은?</summary>
+            <p>장점 : 키 분포가 더 균등해진다. 단점 : 가상 노드 데이터를 저장할 공간이 더 든다.</p>
+        </details>
+        <details>
+            <summary>6. 1장 샤딩의 어떤 문제를 해결하나?</summary>
+            <p>재샤딩 문제(데이터 재배치)와 핫스팟 키 문제.</p>
+        </details>
+
+        <h2>더 공부할 거리 <span class="add">보충</span></h2>
+        <ul>
+            <li>안정 해시 외 방식 : rendezvous(HRW) hashing, jump consistent hash</li>
+            <li>Cassandra 의 복제 (링에서 N 개 서버에 복제)</li>
+            <li>분산 캐시 (Memcached 클라이언트 샤딩)</li>
+        </ul>
+
+        <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch04.html">← 4장</a></p>
+    </body>
+</html>
