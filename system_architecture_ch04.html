@@ -10,6 +10,7 @@
         <script src="./js/mobile_code.js" defer></script>
     </head>
     <body>
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker></defs></svg>
         <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch01.html">← 1장</a> | <a href="./system_architecture_ch05.html">5장 →</a></p>
         <h1>4장. 처리율 제한 장치의 설계</h1>
         <p>
@@ -54,6 +55,19 @@
         <h2>3. 처리율 제한 알고리즘 5가지</h2>
 
         <h3>3-1. 토큰 버킷 (token bucket)</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 180" role="img" aria-label="토큰 버킷">
+            <text x="70" y="14" text-anchor="middle" class="sm">토큰 공급 (초당 r개)</text>
+            <path class="line" d="M70,20 V58"/>
+            <rect class="plain" x="20" y="60" width="100" height="84" rx="6"/>
+            <circle class="yellow" cx="42" cy="124" r="11"/><circle class="yellow" cx="70" cy="124" r="11"/><circle class="yellow" cx="98" cy="124" r="11"/>
+            <circle class="yellow" cx="56" cy="100" r="11"/><circle class="yellow" cx="84" cy="100" r="11"/>
+            <text x="70" y="162" text-anchor="middle" class="sm">버킷 (최대 b개)</text>
+            <path class="line" d="M120,85 H240" style="stroke:#1e7a3c"/><text x="180" y="78" text-anchor="middle" class="sm">토큰 있음</text>
+            <rect class="green" x="245" y="68" width="105" height="34" rx="6"/><text x="297" y="90" text-anchor="middle" class="b">통과</text>
+            <path class="line" d="M120,125 H240" style="stroke:#d33"/><text x="180" y="118" text-anchor="middle" class="sm">토큰 없음</text>
+            <rect class="red" x="245" y="108" width="105" height="34" rx="6"/><text x="297" y="130" text-anchor="middle" class="b">버림 (429)</text>
+            <text x="297" y="60" text-anchor="middle" class="sm">요청 1개 = 토큰 1개</text>
+        </svg><figcaption>토큰이 쌓여 있는 만큼은 한꺼번에 처리 가능 → burst 허용</figcaption></figure>
         <ul>
             <li>정해진 용량의 버킷에 <strong>토큰이 주기적으로 채워진다</strong> (가득 차면 넘치는 건 버림)</li>
             <li>요청 1개 = 토큰 1개 소비. 토큰이 있으면 처리, 없으면 버린다</li>
@@ -65,6 +79,18 @@
         </ul>
 
         <h3>3-2. 누출 버킷 (leaky bucket)</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 185" role="img" aria-label="누출 버킷">
+            <text x="70" y="14" text-anchor="middle" class="sm">요청 (속도 제각각)</text>
+            <path class="line" d="M70,20 V50"/>
+            <rect class="plain" x="30" y="52" width="80" height="84" rx="6"/>
+            <rect class="yellow" x="40" y="62" width="60" height="16"/><rect class="yellow" x="40" y="82" width="60" height="16"/><rect class="yellow" x="40" y="102" width="60" height="16"/>
+            <text x="70" y="130" text-anchor="middle" class="sm">FIFO 큐</text>
+            <path class="line" d="M70,136 V164"/>
+            <text x="70" y="180" text-anchor="middle" class="sm">고정 속도로 처리</text>
+            <path class="line" d="M110,70 L180,50" style="stroke:#d33"/>
+            <rect class="red" x="182" y="34" width="168" height="32" rx="6"/><text x="266" y="55" text-anchor="middle">큐가 가득 차면 버림</text>
+            <rect class="green" x="182" y="100" width="168" height="48" rx="6"/><text x="266" y="120" text-anchor="middle" class="b">처리율이 일정</text><text x="266" y="138" text-anchor="middle" class="sm">안정적 출력 · burst 에는 약함</text>
+        </svg><figcaption>들어오는 속도는 제각각이어도 나가는 속도는 항상 일정</figcaption></figure>
         <ul>
             <li>토큰 버킷과 비슷하지만 <strong>처리율이 고정</strong>. 보통 <strong>FIFO 큐</strong>로 구현</li>
             <li>요청이 오면 큐에 자리가 있으면 추가, 가득 찼으면 버린다. 정해진 시간마다 큐에서 꺼내 처리</li>
@@ -75,6 +101,17 @@
         </ul>
 
         <h3>3-3. 고정 윈도 카운터 (fixed window counter)</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 145" role="img" aria-label="고정 윈도 경계 문제">
+            <rect class="box" x="20" y="12" width="160" height="24" rx="4"/><text x="100" y="29" text-anchor="middle">윈도 1 (한도 5)</text>
+            <rect class="box" x="180" y="12" width="160" height="24" rx="4"/><text x="260" y="29" text-anchor="middle">윈도 2 (한도 5)</text>
+            <path class="plain" d="M20,50 H340"/>
+            <path class="plain" d="M20,45 V55"/><path class="plain" d="M180,45 V55"/><path class="plain" d="M340,45 V55"/>
+            <text x="20" y="70" text-anchor="middle" class="sm">2:00</text><text x="180" y="70" text-anchor="middle" class="sm">2:01</text><text x="340" y="70" text-anchor="middle" class="sm">2:02</text>
+            <circle cx="118" cy="92" r="5" fill="#d33"/><circle cx="129" cy="92" r="5" fill="#d33"/><circle cx="140" cy="92" r="5" fill="#d33"/><circle cx="151" cy="92" r="5" fill="#d33"/><circle cx="162" cy="92" r="5" fill="#d33"/>
+            <circle cx="198" cy="92" r="5" fill="#d33"/><circle cx="209" cy="92" r="5" fill="#d33"/><circle cx="220" cy="92" r="5" fill="#d33"/><circle cx="231" cy="92" r="5" fill="#d33"/><circle cx="242" cy="92" r="5" fill="#d33"/>
+            <path class="plain" d="M110,108 H250" style="stroke:#d33"/><path class="plain" d="M110,103 V113" style="stroke:#d33"/><path class="plain" d="M250,103 V113" style="stroke:#d33"/>
+            <text x="180" y="130" text-anchor="middle" style="fill:#d33" class="b">경계를 낀 1분 사이 10개 통과 (한도의 2배)</text>
+        </svg><figcaption>윈도 끝과 다음 윈도 시작에 요청이 몰리면 한도보다 많이 통과</figcaption></figure>
         <ul>
             <li>타임라인을 <strong>고정 간격의 윈도</strong>로 나누고 윈도마다 카운터를 둔다. 요청이 오면 +1, 임계치에 도달하면 그 윈도가 끝날 때까지 버린다</li>
             <li>👍 메모리 효율적, 이해하기 쉬움</li>
@@ -111,6 +148,17 @@
 
         <!-- ============================================================ -->
         <h2>4. 개략적 아키텍처</h2>
+        <figure class="diagram"><svg viewBox="0 0 360 170" role="img" aria-label="처리율 제한 아키텍처">
+            <rect class="gray" x="5" y="58" width="70" height="38" rx="6"/><text x="40" y="82" text-anchor="middle" class="b">클라이언트</text>
+            <rect class="yellow" x="105" y="52" width="110" height="46" rx="6"/><text x="160" y="72" text-anchor="middle" class="b">처리율 제한</text><text x="160" y="88" text-anchor="middle" class="sm">미들웨어</text>
+            <rect class="green" x="110" y="126" width="100" height="34" rx="6"/><text x="160" y="148" text-anchor="middle">Redis 카운터</text>
+            <rect class="box" x="275" y="20" width="80" height="34" rx="6"/><text x="315" y="42" text-anchor="middle">API 서버</text>
+            <rect class="red" x="275" y="100" width="80" height="34" rx="6"/><text x="315" y="122" text-anchor="middle">429 응답</text>
+            <path class="line" d="M75,77 H105"/>
+            <path class="line" d="M145,98 V126"/><path class="line" d="M175,126 V98"/>
+            <path class="line" d="M215,62 L275,40"/><text x="250" y="43" text-anchor="middle" class="sm">미만</text>
+            <path class="line" d="M215,88 L275,116"/><text x="250" y="118" text-anchor="middle" class="sm">초과</text>
+        </svg><figcaption>요청마다 Redis 카운터를 확인·증가 → 한도 미만이면 통과, 초과면 429</figcaption></figure>
         <ul>
             <li>핵심 : 요청 수를 추적할 <strong>카운터</strong>를 어디에 저장할까?</li>
             <li>DB 는 디스크 접근이라 느리다 → <strong>메모리 캐시(Redis)</strong> 사용. 시간 기반 만료 지원</li>

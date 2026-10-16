@@ -10,6 +10,7 @@
         <script src="./js/mobile_code.js" defer></script>
     </head>
     <body>
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker></defs></svg>
         <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch05.html">← 5장</a></p>
         <h1>6장. 키-값 저장소 설계</h1>
         <p>
@@ -41,6 +42,19 @@
 
         <!-- ============================================================ -->
         <h2>3. 분산 키-값 저장소 : CAP 정리</h2>
+        <figure class="diagram"><svg viewBox="0 0 360 250" role="img" aria-label="CAP 정리">
+            <path class="plain" d="M180,45 L305,205 L55,205 Z"/>
+            <path d="M180,45 L55,205" stroke="#d33" stroke-width="2.5" stroke-dasharray="5 4" fill="none"/>
+            <path d="M180,45 L305,205" stroke="#1e7a3c" stroke-width="3" fill="none"/>
+            <path d="M55,205 L305,205" stroke="#1e7a3c" stroke-width="3" fill="none"/>
+            <circle class="blue" cx="180" cy="45" r="24"/><text x="180" y="51" text-anchor="middle" class="w b">C</text><text x="180" y="12" text-anchor="middle" class="sm">일관성 Consistency</text>
+            <circle class="blue" cx="55" cy="205" r="24"/><text x="55" y="211" text-anchor="middle" class="w b">A</text><text x="55" y="244" text-anchor="middle" class="sm">가용성 Availability</text>
+            <circle class="blue" cx="305" cy="205" r="24"/><text x="305" y="211" text-anchor="middle" class="w b">P</text><text x="305" y="244" text-anchor="middle" class="sm">파티션 감내</text>
+            <text x="62" y="120" text-anchor="middle" style="fill:#d33" class="b">CA</text><text x="62" y="136" text-anchor="middle" style="fill:#d33" class="sm">분산에선 불가</text>
+            <text x="278" y="120" text-anchor="middle" style="fill:#1e7a3c" class="b">CP</text><text x="278" y="136" text-anchor="middle" style="fill:#1e7a3c" class="sm">가용성 희생</text>
+            <text x="180" y="196" text-anchor="middle" style="fill:#1e7a3c" class="b">AP</text><text x="180" y="226" text-anchor="middle" style="fill:#1e7a3c" class="sm">일관성 희생</text>
+            <text x="180" y="125" text-anchor="middle" class="sm">P 는 포기 불가</text><text x="180" y="141" text-anchor="middle" class="sm">→ CP or AP</text>
+        </svg><figcaption>세 가지를 모두 가질 순 없고, 네트워크 파티션은 피할 수 없으므로 C 와 A 중 하나를 고른다</figcaption></figure>
         <table>
             <tr><th>요소</th><th>의미</th></tr>
             <tr><td>C 일관성<br/>(Consistency)</td><td>어떤 노드에 접속하든 <strong>언제나 같은 데이터</strong>를 본다</td></tr>
@@ -55,6 +69,26 @@
         </div>
 
         <h3>이상 vs 실세계</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 215" role="img" aria-label="파티션 발생 시 CP와 AP">
+            <rect class="box" x="15" y="12" width="72" height="34" rx="6"/><text x="51" y="34" text-anchor="middle" class="b">n1</text>
+            <rect class="box" x="127" y="12" width="72" height="34" rx="6"/><text x="163" y="34" text-anchor="middle" class="b">n2</text>
+            <rect class="gray" x="273" y="12" width="72" height="34" rx="6"/><text x="309" y="34" text-anchor="middle" class="b">n3</text>
+            <path class="plain" d="M87,29 H127"/>
+            <path d="M199,29 H273" stroke="#d33" stroke-width="2" stroke-dasharray="5 4" fill="none"/>
+            <text x="236" y="26" text-anchor="middle" style="fill:#d33" class="b">✗ 단절</text>
+            <text x="51" y="62" text-anchor="middle" class="sm">v2 (최신)</text><text x="163" y="62" text-anchor="middle" class="sm">v2 (최신)</text><text x="309" y="62" text-anchor="middle" class="sm">v1 (낡음)</text>
+            <rect class="red" x="8" y="82" width="168" height="120" rx="8"/>
+            <text x="92" y="104" text-anchor="middle" class="b">CP (일관성 선택)</text>
+            <text x="92" y="130" text-anchor="middle" class="sm">n1, n2 의 쓰기 중단</text>
+            <text x="92" y="148" text-anchor="middle" class="sm">또는 오류 반환</text>
+            <text x="92" y="176" text-anchor="middle" style="fill:#d33" class="b">가용성 ✗</text>
+            <rect class="yellow" x="184" y="82" width="168" height="120" rx="8"/>
+            <text x="268" y="104" text-anchor="middle" class="b">AP (가용성 선택)</text>
+            <text x="268" y="130" text-anchor="middle" class="sm">낡은 데이터 가능해도</text>
+            <text x="268" y="148" text-anchor="middle" class="sm">읽기·쓰기 계속 허용</text>
+            <text x="268" y="166" text-anchor="middle" class="sm">복구 후 n3 에 동기화</text>
+            <text x="268" y="190" text-anchor="middle" style="fill:#b07d00" class="b">일관성 ✗</text>
+        </svg><figcaption>n3 가 끊겼을 때 : 일관성을 지키려면 쓰기를 멈추고, 가용성을 지키려면 낡은 데이터를 감수</figcaption></figure>
         <ul>
             <li>이상 : n1, n2, n3 사이 파티션이 안 생김 → 쓴 데이터가 즉시 복제 → C 와 A 모두 만족</li>
             <li>실세계 : <strong>n3 가 단절</strong>되면 n1, n2 의 최신 데이터가 n3 로 가지 못한다 → n3 는 <strong>오래된 사본</strong></li>
@@ -84,6 +118,21 @@
         </ul>
 
         <h3>4-2. 데이터 다중화</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 230" role="img" aria-label="링 위 데이터 다중화">
+            <circle class="ring" cx="150" cy="115" r="70"/>
+            <text x="150" y="112" text-anchor="middle" class="sm">N = 3</text><text x="150" y="127" text-anchor="middle" class="sm">시계 방향 3대</text>
+            <circle class="blue" cx="150" cy="45" r="15"/><text x="150" y="50" text-anchor="middle" class="w sm">s0</text>
+            <circle cx="211" cy="80" r="15" fill="#1e7a3c"/><text x="211" y="85" text-anchor="middle" class="w sm">s1</text>
+            <circle cx="211" cy="150" r="15" fill="#1e7a3c"/><text x="211" y="155" text-anchor="middle" class="w sm">s2</text>
+            <circle cx="150" cy="185" r="15" fill="#1e7a3c"/><text x="150" y="190" text-anchor="middle" class="w sm">s3</text>
+            <circle class="blue" cx="89" cy="150" r="15"/><text x="89" y="155" text-anchor="middle" class="w sm">s4</text>
+            <circle class="blue" cx="89" cy="80" r="15"/><text x="89" y="85" text-anchor="middle" class="w sm">s5</text>
+            <circle class="yellow" cx="185" cy="54" r="8"/><text x="178" y="44" class="sm">키</text>
+            <rect class="gray" x="280" y="95" width="75" height="36" rx="6"/><text x="317" y="118" text-anchor="middle">클라이언트</text>
+            <path class="line" d="M280,105 L232,88"/><text x="300" y="86" text-anchor="middle" class="sm">put(k, v)</text>
+            <text x="300" y="160" text-anchor="middle" style="fill:#1e7a3c" class="sm">초록 = 사본 보관</text>
+            <text x="300" y="176" text-anchor="middle" class="sm">(서로 다른</text><text x="300" y="191" text-anchor="middle" class="sm">물리 서버)</text>
+        </svg><figcaption>키 위치에서 시계 방향으로 N 개의 서버에 사본을 저장</figcaption></figure>
         <ul>
             <li>높은 가용성과 안정성을 위해 데이터를 <strong>N 개 서버에 비동기적으로</strong> 다중화</li>
             <li>키를 링에 배치한 후 <strong>시계 방향으로 N 개 서버</strong>에 사본 저장</li>
@@ -92,6 +141,18 @@
         </ul>
 
         <h3>4-3. 데이터 일관성 : 정족수 (quorum)</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 180" role="img" aria-label="정족수 W+R>N">
+            <text x="180" y="14" text-anchor="middle" class="sm">N = 3 (사본 3개)</text>
+            <path class="plain" d="M20,48 H220" style="stroke:#1e7a3c"/><path class="plain" d="M20,48 V58" style="stroke:#1e7a3c"/><path class="plain" d="M220,48 V58" style="stroke:#1e7a3c"/>
+            <text x="120" y="40" text-anchor="middle" style="fill:#1e7a3c" class="b">쓰기 W = 2 (서버 1, 2 에 씀)</text>
+            <rect class="box" x="20" y="62" width="80" height="40" rx="6"/><text x="60" y="87" text-anchor="middle">서버 1</text>
+            <rect class="green" x="140" y="62" width="80" height="40" rx="6"/><text x="180" y="87" text-anchor="middle" class="b">서버 2</text>
+            <rect class="box" x="260" y="62" width="80" height="40" rx="6"/><text x="300" y="87" text-anchor="middle">서버 3</text>
+            <path class="plain" d="M140,116 H340" style="stroke:#3a6ff7"/><path class="plain" d="M140,116 V106" style="stroke:#3a6ff7"/><path class="plain" d="M340,116 V106" style="stroke:#3a6ff7"/>
+            <text x="240" y="134" text-anchor="middle" style="fill:#3a6ff7" class="b">읽기 R = 2 (서버 2, 3 에서 읽음)</text>
+            <text x="180" y="158" text-anchor="middle" class="sm">서버 2 가 겹친다 → 최신 값을 반드시 만남</text>
+            <text x="180" y="174" text-anchor="middle" class="sm b">W + R = 4 &gt; N = 3  →  강한 일관성</text>
+        </svg><figcaption>쓰기 집합과 읽기 집합이 반드시 겹치면 최신 데이터를 읽는다</figcaption></figure>
         <ul>
             <li><strong>N</strong> = 사본 수, <strong>W</strong> = 쓰기 성공으로 인정받는 데 필요한 응답 수, <strong>R</strong> = 읽기 성공에 필요한 응답 수</li>
             <li><span class="add">보충</span> <strong>중재자(coordinator)</strong> 가 클라이언트와 노드 사이 프록시. W 개의 ack 가 오면 쓰기 성공</li>
@@ -129,6 +190,17 @@
 
         <h3>4-6. 장애 처리</h3>
         <h4>장애 감지 : 가십 프로토콜</h4>
+        <figure class="diagram"><svg viewBox="0 0 360 195" role="img" aria-label="가십 프로토콜 멤버십 목록">
+            <text x="180" y="14" text-anchor="middle" class="b">노드 s0 가 가진 멤버십 목록</text>
+            <rect class="gray" x="10" y="22" width="340" height="26" rx="4"/>
+            <text x="40" y="40" class="b">멤버</text><text x="125" y="40" class="b">박동 카운터</text><text x="245" y="40" class="b">마지막 갱신</text>
+            <rect class="plain" x="10" y="52" width="340" height="26" fill="#fff"/><text x="40" y="70">s0</text><text x="125" y="70">10232</text><text x="245" y="70">방금</text>
+            <rect class="plain" x="10" y="78" width="340" height="26" fill="#fff"/><text x="40" y="96">s1</text><text x="125" y="96">10228</text><text x="245" y="96">1초 전</text>
+            <rect class="red" x="10" y="104" width="340" height="26"/><text x="40" y="122">s2</text><text x="125" y="122">10098</text><text x="245" y="122" style="fill:#d33" class="b">1분 전 → 장애!</text>
+            <rect class="plain" x="10" y="130" width="340" height="26" fill="#fff"/><text x="40" y="148">s3</text><text x="125" y="148">10231</text><text x="245" y="148">방금</text>
+            <text x="180" y="176" text-anchor="middle" class="sm">각 노드가 카운터를 올리고 무작위 노드와 목록을 주고받음</text>
+            <text x="180" y="190" text-anchor="middle" class="sm">오래 안 오르는 멤버는 장애로 판단</text>
+        </svg><figcaption>가십 프로토콜 : 박동 카운터가 일정 시간 갱신되지 않으면 장애로 간주</figcaption></figure>
         <ul>
             <li>한 서버가 "죽었다" 고 해도 부족, <strong>두 대 이상</strong>이 확인해야 장애로 판단</li>
             <li>모든 노드 간 멀티캐스팅은 서버가 많으면 비효율 → <strong>분산형 장애 감지</strong>인 <strong>가십 프로토콜</strong></li>
@@ -173,6 +245,21 @@
         </ul>
 
         <h3>4-8. 쓰기 경로 <span class="add">보충</span> (Cassandra 기준)</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 265" role="img" aria-label="쓰기 경로와 읽기 경로">
+            <text x="90" y="14" text-anchor="middle" class="b">쓰기 경로</text>
+            <rect class="gray" x="10" y="24" width="160" height="38" rx="6"/><text x="90" y="48" text-anchor="middle">쓰기 요청</text>
+            <rect class="box" x="10" y="84" width="160" height="38" rx="6"/><text x="90" y="108" text-anchor="middle">① 커밋 로그에 기록</text>
+            <rect class="box" x="10" y="144" width="160" height="38" rx="6"/><text x="90" y="161" text-anchor="middle">② 메모리 캐시</text><text x="90" y="175" text-anchor="middle" class="sm">(memtable)</text>
+            <rect class="green" x="10" y="204" width="160" height="42" rx="6"/><text x="90" y="222" text-anchor="middle">③ 디스크 SSTable</text><text x="90" y="237" text-anchor="middle" class="sm">(캐시가 가득 차면)</text>
+            <path class="line" d="M90,62 V84"/><path class="line" d="M90,122 V144"/><path class="line" d="M90,182 V204"/>
+            <path d="M180,10 V255" stroke="#ccc" fill="none"/>
+            <text x="270" y="14" text-anchor="middle" class="b">읽기 경로</text>
+            <rect class="gray" x="190" y="24" width="160" height="38" rx="6"/><text x="270" y="48" text-anchor="middle">읽기 요청</text>
+            <rect class="yellow" x="190" y="84" width="160" height="38" rx="6"/><text x="270" y="101" text-anchor="middle">메모리에 있나?</text><text x="270" y="115" text-anchor="middle" class="sm">있으면 바로 반환</text>
+            <rect class="box" x="190" y="144" width="160" height="38" rx="6"/><text x="270" y="161" text-anchor="middle">블룸 필터로</text><text x="270" y="175" text-anchor="middle" class="sm">어느 SSTable 인지 확인</text>
+            <rect class="green" x="190" y="204" width="160" height="42" rx="6"/><text x="270" y="229" text-anchor="middle">SSTable 에서 읽어 반환</text>
+            <path class="line" d="M270,62 V84"/><path class="line" d="M270,122 V144"/><text x="282" y="137" class="sm">없으면</text><path class="line" d="M270,182 V204"/>
+        </svg><figcaption>쓰기는 로그→메모리→디스크, 읽기는 메모리→블룸 필터→디스크 (Cassandra 기준)</figcaption></figure>
         <div class="flow">
             <ol>
                 <li>쓰기 요청이 <strong>커밋 로그</strong> 파일에 기록</li>

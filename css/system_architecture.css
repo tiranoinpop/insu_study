@@ -61,6 +61,66 @@ th {
     padding: 8px 12px;
 }
 
+/* ===== 시스템 아키텍처 노트 전용 ===== */
+.flow {
+    background-color: #f4f7ff;
+    border: 1px solid #c9d6ff;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 12px 0;
+}
+.flow ol { margin: 0; padding-left: 20px; }
+.add {
+    display: inline-block;
+    font-size: 12px;
+    background-color: #e6f4ea;
+    color: #1e7a3c;
+    border-radius: 4px;
+    padding: 0 6px;
+    margin-right: 4px;
+    font-weight: bold;
+}
+.key {
+    background-color: #eef3ff;
+    border-left: 4px solid #3a6ff7;
+    padding: 8px 12px;
+    margin: 16px 0;
+}
+details {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+}
+details summary { cursor: pointer; font-weight: bold; }
+details[open] { background-color: #fafafa; }
+
+/* ===== 그림 (인라인 SVG) : viewBox 너비 360 기준, 화면 너비에 맞춰 줄어든다 ===== */
+figure.diagram {
+    margin: 16px 0;
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fff;
+    text-align: center;
+}
+figure.diagram svg { width: 100%; max-width: 520px; height: auto; }
+figure.diagram figcaption { font-size: 13px; color: #666; margin-top: 4px; }
+.diagram text { font-family: 'Malgun Gothic', sans-serif; font-size: 13px; fill: #222; }
+.diagram .sm { font-size: 11px; fill: #555; }
+.diagram .b { font-weight: bold; }
+.diagram .w { fill: #fff; }
+.diagram .box { fill: #eef3ff; stroke: #3a6ff7; stroke-width: 1.5; }
+.diagram .gray { fill: #f3f3f3; stroke: #888; stroke-width: 1.5; }
+.diagram .green { fill: #e6f4ea; stroke: #1e7a3c; stroke-width: 1.5; }
+.diagram .red { fill: #fdeaea; stroke: #d33; stroke-width: 1.5; }
+.diagram .yellow { fill: #fff7d6; stroke: #f0b400; stroke-width: 1.5; }
+.diagram .blue { fill: #3a6ff7; stroke: #3a6ff7; }
+.diagram .line { stroke: #555; stroke-width: 1.5; fill: none; marker-end: url(#arr); }
+.diagram .dash { stroke: #555; stroke-width: 1.5; fill: none; stroke-dasharray: 4 3; marker-end: url(#arr); }
+.diagram .plain { stroke: #555; stroke-width: 1.5; fill: none; }
+.diagram .ring { fill: none; stroke: #3a6ff7; stroke-width: 2; }
+
 /* ===== 모바일 대응 (화면 너비 600px 이하) : 가로 스크롤 없이 화면 너비에 맞춰 줄바꿈 ===== */
 @media (max-width: 600px) {
     body { font-size: 15px; overflow-wrap: break-word; word-break: keep-all; }   /* keep-all : 한글을 글자 중간이 아니라 띄어쓰기 단위로 줄바꿈 */
