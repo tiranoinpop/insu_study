@@ -109,6 +109,59 @@ console.log(`백틱 : 안녕하세요, ${name}님! 1+2 = ${1 + 2}`)   // 변수�
             <code>BigInt</code>, <code>Symbol</code> : 특수 용도
         </div>
 
+        <h3>3-1. 문자열을 만드는 3가지 따옴표와 템플릿 리터럴 ${ }</h3>
+        <table>
+            <tr><th>따옴표</th><th>변수 끼워넣기</th><th>여러 줄</th><th>주로 쓰는 때</th></tr>
+            <tr><td><code>'...'</code> / <code>"..."</code></td><td>불가 (<code>+</code>로 이어 붙임)</td><td>불가</td><td>고정된 글자. 둘은 <strong>취향 차이</strong> (한 프로젝트에서 하나로 통일)</td></tr>
+            <tr><td><code>`...`</code> (백틱)</td><td><strong>가능</strong> : <code>${ }</code></td><td><strong>가능</strong></td><td>변수가 섞이거나 여러 줄일 때</td></tr>
+        </table>
+        <p class="tip">
+            <code>alert</code> 에 백틱을 쓰는 게 아니라, <strong>문자열 안에 변수를 넣고 싶을 때</strong> 백틱을 쓰는 것이다.
+            고정된 글자면 <code>alert('안녕')</code> 처럼 <code>'</code> / <code>"</code> 로 충분하다.
+        </p>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>let i = 3
+let name = "인수"
+let age = 20
+
+// 예전 방식 : + 로 이어 붙이기 (변수가 많아지면 읽기 어렵다)
+console.log(i + " 번째 반복입니다.")
+
+// 요즘 방식 : 백틱 + ${변수}
+console.log(`${i} 번째 반복입니다.`)
+
+// ${ } 안에는 "값이 나오는 식" 이면 뭐든 가능
+console.log(`${name}님 안녕하세요`)                    // 변수
+console.log(`내년엔 ${age + 1}살`)                     // 계산식
+console.log(`합계 : ${Math.max(3, 7)}`)                // 함수 호출
+console.log(`${age >= 19 ? "성인" : "미성년"}입니다`)  // 삼항 연산자
+
+// 작은따옴표 / 큰따옴표 안에서는 ${ } 가 동작하지 않는다 (글자 그대로 출력)
+console.log('${i} 번째')
+
+// 백틱은 여러 줄도 그대로 유지
+console.log(`첫째 줄
+둘째 줄`)</code></pre>
+            <div class="out"></div>
+        </div>
+        <table>
+            <tr><th>용어 / 기호</th><th>설명</th></tr>
+            <tr><td>템플릿 리터럴<br/>(template literal)</td><td>백틱 <code>`</code> 으로 감싼 문자열. ES6(2015)부터 사용 가능</td></tr>
+            <tr><td><code>${ 식 }</code></td><td>치환 자리(placeholder). 식을 계산한 <strong>결과가 문자열로 바뀌어 그 자리에 들어간다</strong>. 백틱 문자열 안에서만 동작</td></tr>
+            <tr><td>백틱 입력</td><td>키보드의 <code>₩</code> 키 (영문 상태에서 누름)</td></tr>
+            <tr><td>글자 그대로 쓰기</td><td>앞에 <code>\</code> : <code>`가격 \${100}`</code></td></tr>
+        </table>
+        <p>
+            <code>innerHTML</code> 로 HTML 을 만들 때도 자주 쓴다 (14번) :
+        </p>
+<pre><code>box.innerHTML = `&lt;p&gt;${name} : ${age}살&lt;/p&gt;`
+alert(`${i} 번째 반복입니다.`)    // 이 한 줄이 위 예시 (i 가 0 이면 "0 번째 반복입니다.")</code></pre>
+        <p class="tip">
+            <code>while (true)</code> + <code>alert</code> 는 <strong>무한 반복</strong>이라 창을 닫아도 계속 뜬다.
+            테스트할 때는 <code>while (i &lt; 3)</code> 처럼 종료 조건을 꼭 넣는다.
+        </p>
+
         <!-- ============================================================ -->
         <h2>4. 문자열 메서드 : . 으로 호출하기</h2>
         <p>
