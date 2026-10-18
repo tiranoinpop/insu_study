@@ -396,6 +396,45 @@ for (const f of fruits) {
             <div class="out"></div>
         </div>
 
+        <h3>9-1. for...of 와 for...in 의 차이 (C 개발자 주의)</h3>
+        <table>
+            <tr><th>구문</th><th>꺼내는 것</th><th>C / C++ 로 비유</th><th>주로 쓰는 대상</th></tr>
+            <tr><td><code>for (const v of 대상)</code></td><td><strong>값</strong> (value)</td><td>C++ 범위 for : <code>for (auto v : vec)</code></td><td>배열, 문자열, Map, Set (반복 가능한 것)</td></tr>
+            <tr><td><code>for (const k in 대상)</code></td><td><strong>키 / 이름</strong> (key) <strong>문자열</strong></td><td>map 의 키만 순회 / 배열이면 <code>for (i...)</code> 의 <code>i</code> (단, 문자열)</td><td><strong>객체</strong>의 속성 이름</td></tr>
+        </table>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>let arr = ["사과", "배", "귤"]
+
+for (const v of arr) console.log("of :", v)              // 사과, 배, 귤  (값)
+for (const i in arr) console.log("in :", i, typeof i)    // 0, 1, 2 (인덱스인데 "문자열"!)
+
+// 객체 : for...in 으로 키를 꺼낸다
+let user = { name: "인수", age: 30 }
+for (const k in user) console.log(k, "=", user[k])
+
+// 객체에 for...of 는 에러 (객체는 "반복 가능"하지 않음)
+try {
+    for (const x of user) { }
+} catch (e) {
+    console.log(e.name + ": " + e.message)
+}
+// 객체를 for...of 로 돌리려면 Object.entries() 로 [키, 값] 배열을 만든다
+for (const [k, v] of Object.entries(user)) console.log(k, v)
+
+// 배열에서 인덱스와 값이 둘 다 필요할 때 (C 의 for (i...) 대신)
+for (const [i, v] of arr.entries()) console.log(i, v)
+
+// 함정 : in 이 주는 인덱스는 문자열이라 더하면 이어붙는다
+for (const i in arr) console.log(i + 1)                  // "01", "11", "21"</code></pre>
+            <div class="out"></div>
+        </div>
+        <p class="tip">
+            <strong>배열은 <code>for...of</code>, 객체는 <code>for...in</code></strong> 으로 외운다.
+            배열에 <code>for...in</code> 은 쓰지 않는다 : 인덱스가 <strong>문자열</strong>로 나오고, 배열에 직접 붙인 속성이나 상속된 속성까지 같이 나올 수 있다.
+            C 처럼 인덱스로 돌리고 싶으면 <code>for (let i = 0; i &lt; arr.length; i++)</code> 도 그대로 쓸 수 있다.
+        </p>
+
         <h3>배열 메서드 맛보기 : map, filter (AI 코드에 아주 자주 나옴)</h3>
         <div class="demo-js">
             <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
@@ -457,6 +496,54 @@ try {
             <div class="out"></div>
         </div>
         <p class="tip">12_3_1.js 에서 파일 위쪽의 <code>let button</code>과 DOMContentLoaded 함수 안의 <code>let button</code>은 이름만 같고 <strong>서로 다른 변수</strong>다. (함수 안의 것이 바깥 것을 가린다)</p>
+
+        <h3>10-2. 나머지 매개변수 ...args 와 전개 연산자 ...배열</h3>
+        <table>
+            <tr><th>이름</th><th>쓰는 위치</th><th>하는 일</th></tr>
+            <tr><td>나머지 매개변수<br/>(rest)</td><td>함수를 <strong>정의</strong>할 때 매개변수 자리</td><td>남은 인자들을 <strong>하나의 배열로 모은다</strong></td></tr>
+            <tr><td>전개 연산자<br/>(spread)</td><td>함수를 <strong>호출</strong>하거나 배열·객체를 만들 때</td><td>배열 / 객체를 <strong>낱개로 풀어헤친다</strong></td></tr>
+        </table>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>// 1. rest : 인자 개수가 정해지지 않은 함수 (모으기)
+function sum(...nums) {          // 받은 인자를 전부 배열 nums 로 모음
+    let total = 0
+    for (const n of nums) total += n
+    return total
+}
+console.log(sum(1, 2))           // 3
+console.log(sum(1, 2, 3, 4))     // 10
+
+// 앞쪽 매개변수는 따로 받고 나머지만 모으기 (... 은 반드시 마지막, 하나만)
+function log(level, ...messages) {
+    console.log(level, messages)
+}
+log("ERROR", "파일 없음", "경로 확인")
+
+// 2. spread : 배열을 낱개 인자로 풀어서 넘기기 (풀기)
+const nums = [3, 7, 5]
+console.log(Math.max(nums))      // NaN  (배열 통째로 넘겨서 안 됨)
+console.log(Math.max(...nums))   // 7    (Math.max(3, 7, 5) 와 같음)
+
+// 3. 배열 / 객체 복사와 합치기 (원본은 안 바뀜)
+const a = [1, 2]
+console.log([...a, 3, 4])        // [1, 2, 3, 4]
+const user = { name: "인수", age: 20 }
+console.log({ ...user, age: 21 })   // 같은 키는 뒤에 오는 것이 이긴다
+
+// 4. 둘을 같이 쓰기
+function greet(greeting, ...names) {      // rest : 모으기
+    for (const n of names) console.log(`${greeting}, ${n}!`)
+}
+const friends = ["철수", "영희"]
+greet("안녕", ...friends)                  // spread : 풀어서 넘기기</code></pre>
+            <div class="out"></div>
+        </div>
+        <p class="tip">
+            <strong>정의하는 쪽 <code>...</code> = 여럿을 하나(배열)로 모은다 / 사용하는 쪽 <code>...</code> = 하나(배열)를 여럿으로 푼다.</strong><br/>
+            전개 연산자의 복사는 <strong>얕은 복사</strong>다. 배열 안의 객체는 같은 것을 가리키므로 안쪽을 고치면 원본도 바뀐다.
+            C 의 <code>printf(fmt, ...)</code> 가변 인자와 비슷하지만, JS 에서는 <strong>그냥 배열</strong>로 받아서 훨씬 편하다.
+        </p>
 
         <!-- ============================================================ -->
         <h2>11. 객체 (추가)</h2>
