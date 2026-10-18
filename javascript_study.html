@@ -1019,6 +1019,330 @@ console.log(JSON.stringify(user))</code></pre>
             <div class="out"></div>
         </div>
 
+        <h3>11-1. 객체 만들기와 쓰기 : 속성, 메서드, this, 추가·삭제</h3>
+        <p>
+            여러 자료를 묶어서 다룰 때 <strong>객체</strong>를 쓴다. 객체는 중괄호 <code>{ }</code> 로 만든다 (배열은 대괄호 <code>[ ]</code>).
+            사실 <strong>배열도 객체를 기반으로 만들어졌다.</strong>
+        </p>
+        <table>
+            <tr><th>구분</th><th>배열</th><th>객체</th></tr>
+            <tr><td>모양</td><td><code>[ ]</code></td><td><code>{ }</code></td></tr>
+            <tr><td>안의 값 이름</td><td><strong>요소</strong></td><td><strong>속성</strong> (키: 값)</td></tr>
+            <tr><td>값 꺼내기</td><td><code>arr[0]</code></td><td><code>obj.key</code> 또는 <code>obj['key']</code></td></tr>
+            <tr><td>함수가 들어 있으면</td><td>-</td><td>그 속성을 <strong>메서드</strong>라고 부른다</td></tr>
+        </table>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>const product = {
+    제품명: '망고',
+    유형: '당절임',
+    성분: '망고, 설탕, 치자황색소',
+    원산지: '필리핀'
+}
+console.log(product['제품명'])       // 객체['key']
+console.log(product.제품명)          // 객체.key  (결과는 같다)
+
+// 속성 중 함수 = 메서드. this = 이 메서드를 호출한 객체
+const pet = {
+    name: '구름',
+    eat: function (food) {
+        console.log(this.name + '은/는 ' + food + '을/를 먹습니다.')
+    }
+}
+pet.eat('사료')
+
+// 동적으로 만들기 : 빈 객체에 속성을 붙인다
+const student = {}
+student.name = '인수'
+student['grade'] = 3
+student.hobby = ['코딩', '독서']
+console.log(student)
+
+delete student.grade                 // 속성 제거
+console.log(student)
+console.log(JSON.stringify(student, null, 2))   // 들여쓰기 2칸으로 예쁘게 출력</code></pre>
+            <div class="out"></div>
+        </div>
+        <p class="tip">
+            메서드 안에서 <code>this.name</code> 처럼 같은 객체의 속성을 쓸 때 <code>this</code> 가 필요하다 (C++ 의 <code>this</code> 와 비슷).
+            메서드를 <code>eat(food) { ... }</code> 로 짧게 쓸 수도 있다. 단 <strong>화살표 함수로 메서드를 만들면 <code>this</code> 가 객체를 가리키지 않으니</strong> 메서드는 <code>function</code> 으로 쓴다.
+            (예제의 <code>alert</code> 은 이 페이지에서 <code>console.log</code> 로 바꿨다)
+        </p>
+
+        <h3>11-2. 자료형 : 기본 자료형과 객체 자료형</h3>
+        <table>
+            <tr><th>분류</th><th>종류</th></tr>
+            <tr><td>기본 자료형</td><td>숫자, 문자열, 불 (그리고 <code>undefined</code>, <code>null</code> 등)</td></tr>
+            <tr><td>객체 자료형</td><td><strong>함수, 배열, 그 밖에 전부</strong> (배열도 객체, 함수도 객체)</td></tr>
+        </table>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>console.log(typeof 10, typeof "a", typeof true)          // number string boolean
+console.log(typeof [1], typeof {}, typeof function () {}) // object object function
+console.log(Array.isArray([1]), Array.isArray({}))       // true false : 배열인지 확인
+
+// Number(), String(), Boolean() : new 를 붙이면 "객체", 안 붙이면 기본 자료형
+const n1 = Number("10")
+const n2 = new Number(10)
+console.log(typeof n1, typeof n2)       // number object
+console.log(n2 + 1, n2.valueOf())       // 11 10  (valueOf 로 안의 값을 꺼낸다)
+const s = new String("abc")
+console.log(typeof s, s.length)         // object 3
+
+// 기본 자료형에 . 을 찍으면 잠깐 객체로 승급했다가 곧 원래대로 돌아온다
+const str = "hello"
+console.log(str.toUpperCase())          // 이 순간만 객체처럼 동작
+str.myProp = 1                          // 임시 객체에 붙인 것이라 바로 사라진다
+console.log(str.myProp)                 // undefined</code></pre>
+            <div class="out"></div>
+        </div>
+        <p class="tip">
+            <code>typeof</code> 는 배열도 <code>"object"</code> 라고 하므로 <strong>배열 판별은 <code>Array.isArray()</code></strong> 로 한다.
+            (<code>typeof</code> 가 함수에는 <code>"function"</code> 이라고 알려 주지만 함수도 객체의 한 종류다)
+            5번의 <code>Number("10")</code> 처럼 <code>new</code> 없이 쓰는 건 <strong>형 변환</strong>이고, <code>new</code> 를 붙여야 객체가 만들어진다.
+        </p>
+
+        <h3>11-3. prototype : 모든 객체에 메서드 추가하기</h3>
+        <p>
+            <code>자료형.prototype.이름 = ...</code> 으로 속성이나 메서드를 추가하면 <strong>그 자료형으로 만든 모든 값에서</strong> 쓸 수 있다.
+            메서드 안에서 <code>this</code> 는 <strong>그 값 자신</strong>이다. 숫자 값은 <code>this.valueOf()</code>, 문자열이나 배열 안을 찾을 때는 <code>this.indexOf()</code> 를 쓴다.
+        </p>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>try {
+    // 1. 속성 추가 : 모든 Number 에서 보인다
+    Number.prototype.sample = 10
+    console.log((5).sample, (99).sample)         // 10 10
+
+    // 2. 메서드 추가 : ** 는 거듭제곱 (2 ** 3 = 8)
+    Number.prototype.power = function (n = 2) {
+        return this.valueOf() ** n               // this.valueOf() = 숫자 값
+    }
+    console.log((3).power())                     // 9   (기본값 n = 2)
+    console.log((2).power(3))                    // 8
+
+    // 3. 문자열 / 배열 : this.indexOf() 로 안에 있는지 찾기
+    String.prototype.has = function (word) {
+        return this.indexOf(word) !== -1         // 없으면 -1
+    }
+    console.log("Hello JS".has("JS"), "Hello JS".has("xyz"))   // true false
+
+    Array.prototype.has = function (item) {
+        return this.indexOf(item) !== -1
+    }
+    console.log([10, 20, 30].has(20), [10, 20, 30].indexOf(20))  // true 1  (몇 번째 인덱스인지는 indexOf)
+} finally {
+    // 이 페이지의 다른 예제에 영향 주지 않도록 정리
+    delete Number.prototype.sample
+    delete Number.prototype.power
+    delete String.prototype.has
+    delete Array.prototype.has
+}</code></pre>
+            <div class="out"></div>
+        </div>
+        <p class="tip">
+            내장 객체(<code>Number</code>, <code>Array</code> ...)의 <code>prototype</code> 을 건드리면 <strong>다른 코드나 라이브러리와 충돌</strong>할 수 있어서 실무에서는 피한다.
+            개념(모든 객체가 공유하는 메서드가 <code>prototype</code> 에 있다)을 이해하는 용도로 알아 두자.
+            그래서 위 예제도 끝에서 <code>delete</code> 로 되돌려 놓았다.
+        </p>
+
+        <h3>11-4. Number 객체 : toFixed, isNaN, isFinite</h3>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>// toFixed(n) : 소수점 n 번째 자리까지 (결과는 "문자열")
+const l = 123.4532131
+console.log(l.toFixed(2))                // "123.45"
+console.log(typeof l.toFixed(2))         // string
+console.log((5).toFixed(2))              // "5.00"  부족한 자리는 0 으로 채움
+console.log((1.005).toFixed(2))          // "1.00"  실수 오차 때문에 반올림이 예상과 다를 수 있다
+
+// NaN 은 === 로 비교해서는 알 수 없다
+console.log(NaN === NaN)                 // false  (NaN 은 자기 자신과도 같지 않다)
+console.log(Number.isNaN(NaN))           // true   확인은 isNaN
+console.log(isNaN("abc"), Number.isNaN("abc"))   // true false : 전역 isNaN 은 변환 후 검사, Number.isNaN 은 엄격
+
+// Infinity 확인 : isFinite
+console.log(1 / 0, -1 / 0)               // Infinity -Infinity
+console.log(isFinite(1 / 0), isFinite(10))       // false true
+console.log(Number.isFinite("10"))       // false : 문자열은 숫자가 아니므로</code></pre>
+            <div class="out"></div>
+        </div>
+        <p class="tip">
+            메서드 이름은 <strong>대소문자를 구분</strong>한다 : <code>toFixed</code> (O) / <code>tofixed</code> (X).
+            <code>Number.isNaN()</code> 은 <strong>진짜 NaN 일 때만</strong> true 라서 헷갈리지 않는다. 새 코드에서는 이쪽을 권장.
+        </p>
+
+        <h3>11-5. String 객체 : trim, split</h3>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>const text = "  \n사과, 배, 귤  \n"
+console.log(text.trim())                  // 양쪽 끝의 공백, 줄바꿈 제거 ("사과, 배, 귤")
+console.log(text.trim().split(", "))      // 특정 기호로 잘라서 "배열" 로 돌려준다
+console.log("2026-10-18".split("-"))      // [ '2026', '10', '18' ]
+console.log("a,b,c".split(",").join("/")) // 다시 합치기 (join)</code></pre>
+            <div class="out"></div>
+        </div>
+
+        <h3>11-6. JSON 객체 : stringify, parse</h3>
+        <p>
+            JSON (JavaScript Object Notation) : 자료를 <strong>문자열로 표현하는 약속</strong>. 서버와 데이터를 주고받을 때 쓴다.
+            JavaScript 객체와 모양이 비슷하지만 규칙이 더 엄격하다.
+        </p>
+        <table>
+            <tr><th>JSON 규칙</th><th>설명</th></tr>
+            <tr><td>값의 종류</td><td>문자열, 숫자, 불, <code>null</code>, 배열, 객체만 가능 (함수, <code>undefined</code> 불가)</td></tr>
+            <tr><td>문자열</td><td>반드시 <strong>큰따옴표</strong> <code>"</code></td></tr>
+            <tr><td>키</td><td>키에도 <strong>반드시 큰따옴표</strong></td></tr>
+            <tr><td>배열 / 객체</td><td><code>[ ]</code> / <code>{ }</code></td></tr>
+        </table>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>const data = { name: "인수", age: 30, skills: ["JS", "C"], address: null, hello() {}, nothing: undefined }
+
+// 객체 → JSON 문자열 : JSON.stringify(자료, 추출할 속성, 들여쓰기)
+console.log(JSON.stringify(data))                       // 함수와 undefined 는 빠진다
+console.log(JSON.stringify(data, null, 2))              // 보통 null 과 2 (들여쓰기 2칸)
+console.log(JSON.stringify(data, ["name", "age"]))      // 2번째 인자 : 이 속성만 추출
+
+// JSON 문자열 → 객체 : JSON.parse
+const text = '{"name":"인수","age":30,"list":[1,2,3]}'
+const obj = JSON.parse(text)
+console.log(typeof text, typeof obj)                    // string object
+console.log(obj.name, obj.list[1])                      // 인수 2
+
+// 규칙에 어긋나면 에러 (키에 따옴표 없음, 작은따옴표)
+try {
+    JSON.parse("{name: '인수'}")
+} catch (e) {
+    console.log(e.name)                                 // SyntaxError
+}</code></pre>
+            <div class="out"></div>
+        </div>
+        <p class="tip">
+            <code>JSON.stringify</code> (객체 → 문자열) 와 <code>JSON.parse</code> (문자열 → 객체) 를 짝으로 외운다.
+            (<code>parser</code> 가 아니라 <code>parse</code>)
+        </p>
+
+        <h3>11-7. 속성이 있는지 확인하기</h3>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>const object = { name: "인수", count: 0, nick: "" }
+
+// 방법 1 : undefined 와 비교 (없는 속성의 값은 undefined)
+if (object.name !== undefined) {
+    console.log('name 속성 있음')
+}
+
+// 방법 2 : 값 자체를 조건으로 (더 간단하지만 0, "", false 는 "없음" 으로 오해한다)
+if (object.name) {
+    console.log('name 은 참')
+}
+if (object.count) {
+    console.log('count 는 참')
+} else {
+    console.log('count 는 속성이 있지만 0 이라 거짓 취급')
+}
+
+// 방법 3 : || 와 &amp;&amp; 로 짧게 (단락 평가)
+object.name || console.log('name 속성 없습니다')       // 앞이 "거짓" 일 때만 뒤를 실행
+object.name &amp;&amp; console.log('name 속성 있습니다.')    // 앞이 "참" 일 때만 뒤를 실행
+object.age || console.log('age 속성 없습니다')
+
+// 정확하게 "존재" 만 확인하는 방법
+console.log('count' in object, Object.hasOwn(object, 'count'), 'age' in object)   // true true false</code></pre>
+            <div class="out"></div>
+        </div>
+        <table>
+            <tr><th>코드</th><th>뜻</th></tr>
+            <tr><td><code>A || B</code></td><td>A 가 <strong>거짓일 때만</strong> B 실행 → "<strong>없으면</strong> ~한다" / 기본값 지정</td></tr>
+            <tr><td><code>A &amp;&amp; B</code></td><td>A 가 <strong>참일 때만</strong> B 실행 → "<strong>있으면</strong> ~한다"</td></tr>
+        </table>
+        <p class="tip">
+            <code>||</code> 뒤에 "있음" 메시지를 쓰면 <strong>반대로 동작</strong>하니 주의한다. (없을 때 "있음" 이 출력된다)<br/>
+            값이 <code>0</code>, <code>""</code>, <code>false</code> 일 수 있으면 <code>object.name</code> 자체를 조건으로 쓰지 말고
+            <code>!== undefined</code>, <code>in</code>, <code>Object.hasOwn</code> 으로 확인한다.
+        </p>
+
+        <h3>11-8. 다중 할당 (구조 분해 할당) : 배열 기반, 객체 기반</h3>
+        <table>
+            <tr><th></th><th>배열 기반</th><th>객체 기반</th></tr>
+            <tr><td>모양</td><td><code>const [a, b] = 배열</code></td><td><code>const { 속성이름, 속성이름 } = 객체</code></td></tr>
+            <tr><td>짝 맞추는 기준</td><td><strong>순서</strong></td><td><strong>속성 이름</strong></td></tr>
+            <tr><td>변수 이름</td><td>마음대로</td><td>속성 이름과 같아야 함 (다르게 받으려면 <code>속성이름: 새이름</code>)</td></tr>
+        </table>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>// 배열 기반 : 순서대로
+let [a, b] = [1, 2]
+console.log(a, b)                          // 1 2
+;[a, b] = [b, a]                           // 두 값 바꾸기 (swap)
+console.log(a, b)                          // 2 1
+const [first, , third] = [10, 20, 30]      // 가운데는 건너뜀
+const [head, ...tail] = [1, 2, 3, 4]       // 나머지는 배열로
+console.log(first, third, head, tail)
+
+// 객체 기반 : 이름으로
+const item = { name: "사과", price: 1000 }
+const { name, price } = item               // const name = item.name, const price = item.price 와 같다
+console.log(name, price)                   // 사과 1000
+
+const { price: p, name: n } = item         // 속성이름: 새이름  (다른 이름으로 받기)
+console.log(n, p)
+const { tax = 10 } = item                  // 속성이 없으면 기본값
+console.log(tax)
+
+// 함수 매개변수에서 바로 분해
+function show({ name, price }) {
+    console.log(`${name} : ${price}원`)
+}
+show(item)</code></pre>
+            <div class="out"></div>
+        </div>
+        <p class="tip">
+            <code>const { name, price } = item</code> 의 <code>{ }</code> 는 블록이 아니라 <strong>"이 이름으로 변수를 만들어라"</strong> 는 선언 패턴이다.
+            그래서 다음 줄에서 <code>name</code>, <code>price</code> 를 바로 쓸 수 있다.
+            이미 만든 변수에 다시 넣을 땐 <code>({ name, price } = item)</code> 처럼 <strong>괄호로 감싼다</strong> (안 그러면 <code>{ }</code> 가 블록으로 읽힌다).
+            또 줄이 <code>[</code> 로 시작하면 앞 줄과 이어지는 함정이 있어 위 예제처럼 <code>;[a, b] = ...</code> 로 쓴다 (10-9).
+        </p>
+
+        <h3>11-9. 전개 연산자로 복사하기 : 배열 [...], 객체 {...}</h3>
+        <p>
+            배열과 객체는 변수에 대입할 때 <strong>복사가 아니라 같은 주소를 참조</strong>한다 (C 의 포인터처럼 같은 대상을 가리킴).
+            전개 연산자로 <strong>새 복사본(clone)</strong>을 쉽게 만들 수 있다.
+        </p>
+        <div class="demo-js">
+            <div class="bar"><span>JavaScript</span><button class="run-btn">▶ 다시 실행</button></div>
+            <pre><code>// 배열
+const original = [1, 2, 3]
+const ref = original                  // 복사가 아니라 같은 배열을 가리킨다
+ref.push(4)
+console.log(original)                 // [1, 2, 3, 4]  원본도 바뀜!
+console.log(ref === original)          // true
+
+const clone = [...original]           // 새 배열로 복사
+clone.push(5)
+console.log(original, clone)          // 원본은 그대로
+console.log(clone === original)        // false
+
+// 객체 : 뒤에 오는 것이 앞을 덮어쓴다
+const base = { name: "사과", price: 1000 }
+console.log({ ...base, price: 2000, color: "red" })   // 속성을 뒤에 쓰면 덮어쓰기 : price 2000
+console.log({ price: 0, color: "none", ...base })     // 전개를 뒤에 쓰면 base 가 이김 : 앞의 값은 "기본값" 역할
+
+// 주의 : 얕은 복사 (한 겹만 복사)
+const nested = { info: { stock: 5 } }
+const copy = { ...nested }
+copy.info.stock = 99
+console.log(nested.info.stock)        // 99 : 안쪽 객체는 같은 것을 공유한다</code></pre>
+            <div class="out"></div>
+        </div>
+        <table>
+            <tr><th>쓰는 법</th><th>의미</th></tr>
+            <tr><td><code>{ ...객체, 속성: 값 }</code></td><td>객체를 복사한 뒤 <strong>그 속성만 덮어씀</strong> (상태 업데이트에 자주 씀)</td></tr>
+            <tr><td><code>{ 속성: 값, ...객체 }</code></td><td>앞의 값은 <strong>기본값</strong>, 객체에 같은 속성이 있으면 객체 것이 이김</td></tr>
+        </table>
+        <p class="tip">전개 연산자의 복사는 <strong>얕은 복사</strong>다. 안쪽 객체까지 따로 만들려면 별도의 깊은 복사가 필요하다. (<code>structuredClone(객체)</code>)</p>
+
         <!-- ============================================================ -->
         <h2>12. &lt;script&gt;로 JavaScript 넣기 : 스스로 작동 (사용자 상호작용 없음)</h2>
         <p>
