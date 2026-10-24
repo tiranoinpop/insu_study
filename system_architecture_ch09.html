@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<!-- 시스템 아키텍처 노트 9장 : 웹 크롤러 설계 (원본 : insu_study/system_architecture/ch09_*.md) -->
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>시스템 설계 9장 - 웹 크롤러</title>
+        <link href="./css/system_architecture.css" rel="stylesheet">
+        <script src="./js/mobile_table.js" defer></script>
+        <script src="./js/mobile_code.js" defer></script>
+    </head>
+    <body>
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker></defs></svg>
+        <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch08.html">← 8장</a></p>
+        <h1>9장. 웹 크롤러 설계</h1>
+        <p>
+            Web Crawler (robot, spider). 웹에 새로 올라오거나 갱신된 콘텐츠를 찾아내는 기술.<br/>
+            <span class="add">보충</span> 표시는 공부 노트에 없던 내용을 보강한 부분이다.
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>1. 웹 크롤러란</h2>
+        <ul>
+            <li>검색 엔진에서 널리 쓰는 기술. 웹에 <strong>새로 올라오거나 갱신된 콘텐츠를 찾아내는 것</strong>이 주된 목적</li>
+            <li>몇 개 웹 페이지에서 시작해 <strong>그 링크를 따라</strong> 나가며 새 콘텐츠를 수집</li>
+        </ul>
+        <table>
+            <tr><th>용도</th><th>설명</th></tr>
+            <tr><td>검색 엔진 인덱싱</td><td><strong>가장 보편적인 용례</strong>. 웹 페이지를 모아 검색 인덱스를 만든다</td></tr>
+            <tr><td>웹 아카이빙</td><td>나중에 쓰려고 정보를 모아 보존</td></tr>
+            <tr><td>웹 마이닝</td><td>데이터에서 유용한 정보 도출</td></tr>
+            <tr><td>웹 모니터링</td><td>저작권, 상표권 침해 사례 모니터링 등</td></tr>
+        </table>
+        <table>
+            <tr><th>좋은 크롤러의 요건</th><th>설명</th></tr>
+            <tr><td>규모 확장성</td><td>웹은 거대하다. <strong>병렬 처리</strong>로 효율적으로</td></tr>
+            <tr><td>안정성 (robustness)</td><td>잘못된 HTML, 응답 없는 서버, 장애, 악성 링크 같은 <strong>비정상 상황</strong>에 대응</td></tr>
+            <tr><td>예절 (politeness)</td><td><strong>짧은 시간에 너무 많은 요청</strong>을 보내지 않는다 (무례하다)</td></tr>
+            <tr><td>확장성 (extensibility)</td><td>새로운 형태의 콘텐츠(이미지 등)를 지원하기 쉽게</td></tr>
+        </table>
+
+        <!-- ============================================================ -->
+        <h2>2. 개략적 설계안</h2>
+        <figure class="diagram"><svg viewBox="0 0 360 335" role="img" aria-label="웹 크롤러 개략적 설계">
+            <rect class="gray" x="8" y="15" width="100" height="40" rx="6"/><text x="58" y="40" text-anchor="middle">시작 URL 집합</text>
+            <rect class="yellow" x="128" y="15" width="100" height="40" rx="6"/><text x="178" y="32" text-anchor="middle" class="b">미수집 URL</text><text x="178" y="47" text-anchor="middle" class="sm">저장소 (Frontier)</text>
+            <rect class="box" x="248" y="15" width="104" height="40" rx="6"/><text x="300" y="32" text-anchor="middle">URL 저장소</text><text x="300" y="47" text-anchor="middle" class="sm">이미 방문?</text>
+            <rect class="box" x="8" y="80" width="100" height="40" rx="6"/><text x="58" y="97" text-anchor="middle">DNS 변환기</text><text x="58" y="112" text-anchor="middle" class="sm">도메인 → IP</text>
+            <rect class="box" x="128" y="80" width="100" height="40" rx="6"/><text x="178" y="105" text-anchor="middle" class="b">HTML 다운로더</text>
+            <rect class="box" x="248" y="80" width="104" height="40" rx="6"/><text x="300" y="105" text-anchor="middle">URL 필터</text>
+            <rect class="box" x="128" y="145" width="100" height="40" rx="6"/><text x="178" y="170" text-anchor="middle" class="b">콘텐츠 파서</text>
+            <rect class="box" x="248" y="145" width="104" height="40" rx="6"/><text x="300" y="170" text-anchor="middle">URL 추출기</text>
+            <rect class="yellow" x="128" y="210" width="100" height="40" rx="6"/><text x="178" y="227" text-anchor="middle">콘텐츠 중복?</text><text x="178" y="242" text-anchor="middle" class="sm">해시로 비교</text>
+            <rect class="green" x="128" y="275" width="100" height="40" rx="6"/><text x="178" y="300" text-anchor="middle" class="b">콘텐츠 저장소</text>
+            <path class="line" d="M108,35 H128"/>
+            <path class="line" d="M178,55 V80"/>
+            <path class="line" d="M108,92 H128"/><path class="line" d="M128,108 H108"/>
+            <path class="line" d="M178,120 V145"/>
+            <path class="line" d="M178,185 V210"/>
+            <path class="line" d="M178,250 V275"/>
+            <path class="line" d="M228,165 H248"/>
+            <path class="line" d="M300,145 V120"/>
+            <path class="line" d="M300,80 V55"/>
+            <path class="line" d="M248,35 H228"/>
+            <text x="290" y="220" class="sm">링크 → 필터 → 중복 확인</text><text x="290" y="236" class="sm">→ 다시 저장소로 (순환)</text>
+        </svg><figcaption>URL 을 꺼내 내려받고, 내용은 저장하고, 링크는 추려서 다시 URL 저장소로 보낸다</figcaption></figure>
+        <table>
+            <tr><th>컴포넌트</th><th>하는 일</th></tr>
+            <tr><td>시작 URL 집합</td><td>크롤링 출발점. 주제(쇼핑, 스포츠)나 지역별로 나눠 고르면 좋다</td></tr>
+            <tr><td>미수집 URL 저장소<br/>(URL Frontier)</td><td>아직 다운로드하지 않은 URL 을 저장하는 <strong>FIFO 큐</strong></td></tr>
+            <tr><td>HTML 다운로더</td><td>URL 로 웹 페이지를 내려받는다</td></tr>
+            <tr><td>도메인 이름 변환기</td><td>URL → IP 주소 (DNS)</td></tr>
+            <tr><td>콘텐츠 파서</td><td>다운로드한 페이지를 파싱하고 <strong>검증</strong> (이상한 페이지는 저장 공간만 낭비)</td></tr>
+            <tr><td>중복 콘텐츠 거르기</td><td>이미 저장한 콘텐츠인지 확인. 문서를 <strong>해시값</strong>으로 비교 (문자열 비교는 느림). 책에 따르면 웹 페이지의 약 <strong>29%</strong> 가 중복</td></tr>
+            <tr><td>콘텐츠 저장소</td><td>HTML 저장. 대부분 <strong>디스크</strong>, 인기 있는 콘텐츠는 <strong>메모리</strong></td></tr>
+            <tr><td>URL 추출기</td><td>HTML 에서 <strong>링크를 골라낸다</strong>. 상대 경로는 절대 경로로 변환</td></tr>
+            <tr><td>URL 필터</td><td>특정 콘텐츠 타입, 접속 오류 URL, <strong>차단 목록</strong>의 URL 을 제외</td></tr>
+            <tr><td>URL 저장소<br/>("이미 방문한 URL?")</td><td>방문했거나 미수집인 URL 을 추적해 <strong>중복을 막는다</strong>. <strong>블룸 필터</strong>나 해시 테이블 사용</td></tr>
+        </table>
+        <h3>작업 흐름 <span class="add">보충</span></h3>
+        <div class="flow">
+            <ol>
+                <li><strong>시작 URL</strong> 들을 미수집 URL 저장소에 넣는다</li>
+                <li>HTML 다운로더가 저장소에서 URL 을 가져온다</li>
+                <li>DNS 변환기로 IP 를 얻어 페이지를 내려받는다</li>
+                <li>콘텐츠 파서가 HTML 을 파싱·검증한다</li>
+                <li><strong>중복 콘텐츠인지</strong> 확인한다 (이미 있으면 버림)</li>
+                <li>처음이면 <strong>콘텐츠 저장소에 저장</strong>하고 URL 추출기에 전달</li>
+                <li>URL 추출기가 링크를 골라내 URL 필터로 보낸다</li>
+                <li>필터링 후 <strong>이미 처리한 URL 인지</strong> 확인 (있으면 버림)</li>
+                <li>처음 보는 URL 이면 <strong>URL 저장소와 미수집 URL 저장소</strong>에 추가</li>
+            </ol>
+        </div>
+        <h3>탐색 방식 : DFS vs BFS <span class="add">보충</span></h3>
+        <ul>
+            <li>웹은 <strong>유향 그래프</strong> (페이지 = 노드, 링크 = 에지)</li>
+            <li><strong>DFS</strong> : 깊이가 얼마나 깊어질지 가늠하기 어려워 보통 부적합</li>
+            <li><strong>BFS</strong> : <strong>FIFO 큐</strong>를 써서 널리 쓰인다. 단 문제 두 가지
+                <ul>
+                    <li>같은 <strong>호스트의 링크가 한꺼번에</strong> 몰려 그 서버에 부하 (예의 없음)</li>
+                    <li><strong>우선순위</strong>를 고려하지 않는다</li>
+                </ul>
+            </li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <h2>3. 상세 설계 : 미수집 URL 저장소 (Frontier)</h2>
+        <p>예절, 우선순위, 신선도를 이 저장소가 담당한다.</p>
+
+        <h3>예절 (politeness)</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 245" role="img" aria-label="예절 : 호스트별 큐">
+            <rect class="yellow" x="5" y="85" width="84" height="56" rx="6"/><text x="47" y="107" text-anchor="middle" class="b">라우터</text><text x="47" y="123" text-anchor="middle" class="sm">호스트 → 큐</text>
+            <rect class="box" x="120" y="22" width="70" height="40" rx="6"/><text x="155" y="40" text-anchor="middle" class="b">큐 b1</text><text x="155" y="54" text-anchor="middle" class="sm">a.com</text>
+            <rect class="box" x="120" y="92" width="70" height="40" rx="6"/><text x="155" y="110" text-anchor="middle" class="b">큐 b2</text><text x="155" y="124" text-anchor="middle" class="sm">b.com</text>
+            <rect class="box" x="120" y="162" width="70" height="40" rx="6"/><text x="155" y="180" text-anchor="middle" class="b">큐 b3</text><text x="155" y="194" text-anchor="middle" class="sm">c.com</text>
+            <rect class="green" x="225" y="22" width="100" height="40" rx="6"/><text x="275" y="46" text-anchor="middle">작업 스레드 1</text>
+            <rect class="green" x="225" y="92" width="100" height="40" rx="6"/><text x="275" y="116" text-anchor="middle">작업 스레드 2</text>
+            <rect class="green" x="225" y="162" width="100" height="40" rx="6"/><text x="275" y="186" text-anchor="middle">작업 스레드 3</text>
+            <path class="line" d="M89,100 L120,45"/><path class="line" d="M89,113 H120"/><path class="line" d="M89,126 L120,182"/>
+            <path class="line" d="M190,42 H225"/><path class="line" d="M190,112 H225"/><path class="line" d="M190,182 H225"/>
+            <text x="180" y="228" text-anchor="middle" class="sm">같은 호스트 = 같은 큐 = 스레드 1개 → 요청 사이에 간격</text>
+        </svg><figcaption>한 호스트에는 한 번에 한 요청만, 요청 사이에 지연을 둔다</figcaption></figure>
+        <ul>
+            <li>같은 사이트에 요청을 너무 많이 보내면 서비스 장애(DoS) 처럼 보일 수 있다</li>
+            <li>원칙 : 같은 사이트의 페이지는 <strong>한 번에 한 페이지씩</strong>, 요청 사이에 <strong>지연</strong>을 둔다</li>
+            <li>구현 : <strong>같은 호스트에 속한 URL 은 언제나 같은 큐(b1, b2 ... bn)로 가도록 보장</strong></li>
+            <li><strong>호스트 → 큐 매핑 테이블</strong>을 두고, 큐 선택기(라우터)가 호스트에 맞는 큐로 보낸다</li>
+            <li><strong>큐마다 작업 스레드를 하나씩</strong> 두어, 스레드는 자기 큐의 URL 만 순서대로 내려받는다</li>
+        </ul>
+
+        <h3>우선순위 (priority)</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 195" role="img" aria-label="우선순위 큐">
+            <rect class="yellow" x="5" y="70" width="84" height="56" rx="6"/><text x="47" y="92" text-anchor="middle" class="b">순위결정</text><text x="47" y="108" text-anchor="middle" class="sm">장치</text>
+            <rect class="red" x="120" y="14" width="90" height="38" rx="6"/><text x="165" y="38" text-anchor="middle">f1 (높음)</text>
+            <rect class="yellow" x="120" y="79" width="90" height="38" rx="6"/><text x="165" y="103" text-anchor="middle">f2 (중간)</text>
+            <rect class="box" x="120" y="144" width="90" height="38" rx="6"/><text x="165" y="168" text-anchor="middle">f3 (낮음)</text>
+            <rect class="green" x="240" y="62" width="112" height="72" rx="6"/><text x="296" y="86" text-anchor="middle" class="b">큐 선택기</text><text x="296" y="103" text-anchor="middle" class="sm">높은 큐를</text><text x="296" y="118" text-anchor="middle" class="sm">더 자주 선택</text>
+            <path class="line" d="M89,88 L120,38"/><path class="line" d="M89,98 H120"/><path class="line" d="M89,108 L120,160"/>
+            <path class="line" d="M210,33 L240,85"/><path class="line" d="M210,98 H240"/><path class="line" d="M210,163 L240,112"/>
+        </svg><figcaption>우선순위별 큐를 두고, 높은 큐일수록 선택될 확률을 높인다 → 이후 예절용 호스트별 큐로</figcaption></figure>
+        <ul>
+            <li>같은 웹 페이지라도 중요도가 다르다. <strong>페이지랭크, 트래픽 양, 갱신 빈도</strong> 등 다양한 척도로 <strong>먼저 볼 URL</strong>을 정한다</li>
+            <li><strong>순위결정장치</strong>가 URL 의 우선순위를 계산</li>
+            <li><strong>우선순위별로 큐를 할당</strong> (f1 ... fn). <strong>우선순위가 높으면 더 선택될 확률</strong>을 높인다</li>
+        </ul>
+
+        <h3>신선도 (freshness)</h3>
+        <ul>
+            <li>웹 페이지는 계속 추가·삭제·변경된다</li>
+            <li>이미 다운로드한 페이지라도 <strong>주기적으로 재수집</strong>해 최신 상태를 유지</li>
+            <li><span class="add">보충</span> 방법 : 웹 페이지의 <strong>변경 이력</strong>을 활용 / <strong>우선순위가 높은 페이지는 더 자주</strong> 재수집</li>
+        </ul>
+
+        <h3>저장 방식 <span class="add">보충</span></h3>
+        <ul>
+            <li>URL 이 <strong>수억 개</strong> : 전부 메모리는 공간 부족, 전부 디스크는 느려서 병목</li>
+            <li>→ <strong>대부분은 디스크</strong>, IO 비용을 줄이려고 <strong>메모리 버퍼 큐</strong>를 두고 주기적으로 디스크에 기록 (혼합 방식)</li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <h2>4. 상세 설계 : HTML 다운로더 <span class="add">보충</span></h2>
+        <h3>Robots.txt (Robots Exclusion Protocol)</h3>
+        <ul>
+            <li>웹 사이트가 크롤러에게 <strong>수집해도 되는 페이지</strong>를 알리는 표준 파일</li>
+            <li>크롤링 전에 <strong>robots.txt 를 먼저 확인</strong>하고 규칙을 따른다. 반복 다운로드를 피하려고 <strong>캐싱</strong></li>
+        </ul>
+        <table>
+            <tr><th>성능 최적화</th><th>설명</th></tr>
+            <tr><td>분산 크롤링</td><td>여러 서버에 작업을 나눠 병렬로 (서버마다 여러 스레드)</td></tr>
+            <tr><td>도메인 이름 변환 결과 캐시</td><td>DNS 요청이 <strong>동기적</strong>이라 병목 → 결과를 캐시하고 주기적으로 갱신</td></tr>
+            <tr><td>지역성 (locality)</td><td>크롤링 서버를 <strong>지역별로</strong> 분산 배치해 응답 속도 개선</td></tr>
+            <tr><td>짧은 타임아웃</td><td>응답이 느리거나 없는 서버는 <strong>일정 시간 뒤 포기</strong> (maxWait)</td></tr>
+        </table>
+        <table>
+            <tr><th>안정성 / 확장성</th><th>설명</th></tr>
+            <tr><td>안정 해시 (5장)</td><td>다운로더 서버 부하 분산, 서버 추가/삭제 쉬움</td></tr>
+            <tr><td>크롤 상태 저장</td><td>장애 시 복구해 이어서 크롤링</td></tr>
+            <tr><td>예외 처리 / 데이터 검증</td><td>오류가 나도 전체가 멈추지 않게, 시스템 오류 방지</td></tr>
+            <tr><td>확장성</td><td>새 모듈만 끼워 넣기. 예) <strong>PNG 다운로더</strong>(이미지), <strong>웹 모니터</strong>(저작권 침해 감시)</td></tr>
+        </table>
+
+        <h3>문제 있는 콘텐츠 감지와 회피</h3>
+        <table>
+            <tr><th>문제</th><th>설명 / 해결</th></tr>
+            <tr><td>중복 콘텐츠</td><td><strong>해시/체크섬</strong>으로 탐지</td></tr>
+            <tr><td>거미 덫<br/>(spider trap)</td><td>무한히 깊은 링크로 크롤러를 가두는 페이지. 예) <code>.../foo/bar/foo/bar/...</code> → <strong>URL 최대 길이를 제한</strong>, 사람이 덫을 찾아 필터에 추가</td></tr>
+            <tr><td>데이터 노이즈</td><td>광고, 스크립트 코드, 스팸 URL 등 가치 없는 콘텐츠는 <strong>제외</strong></td></tr>
+        </table>
+
+        <h2>5. 추가로 논의할 것 <span class="add">보충</span></h2>
+        <ul>
+            <li><strong>서버 측 렌더링</strong> : JS 로 동적 생성되는 링크는 렌더링한 뒤 파싱</li>
+            <li>원치 않는 페이지 필터링 (스팸 방지)</li>
+            <li>DB 다중화·샤딩, 서버를 <strong>무상태</strong>로 해서 수평 확장</li>
+            <li>가용성, 일관성, 안정성, 데이터 분석</li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <h2>복습 퀴즈 (눌러서 답 확인)</h2>
+        <details>
+            <summary>1. 웹 크롤러의 용도 4가지는?</summary>
+            <p>검색 엔진 인덱싱, 웹 아카이빙, 웹 마이닝, 웹 모니터링.</p>
+        </details>
+        <details>
+            <summary>2. 좋은 크롤러의 요건 4가지는?</summary>
+            <p>규모 확장성, 안정성(robustness), 예절(politeness), 확장성(extensibility).</p>
+        </details>
+        <details>
+            <summary>3. 개략적 설계의 흐름을 말해 보자</summary>
+            <p>시작 URL → 미수집 URL 저장소 → HTML 다운로더(+DNS) → 콘텐츠 파서 → 중복 콘텐츠 확인 → 콘텐츠 저장소. 파서에서 URL 추출기 → URL 필터 → 이미 방문한 URL 확인 → 다시 미수집 URL 저장소.</p>
+        </details>
+        <details>
+            <summary>4. BFS 가 흔히 쓰이는 이유와 문제점은?</summary>
+            <p>FIFO 큐로 구현하기 쉽고 깊이가 무한히 들어가지 않는다. 문제는 같은 호스트 링크가 몰려 부하를 주고(예절), 우선순위를 고려하지 못한다는 점.</p>
+        </details>
+        <details>
+            <summary>5. 예절을 지키려면 큐를 어떻게 구성하나?</summary>
+            <p>같은 호스트의 URL 은 항상 같은 큐로 보내고(호스트→큐 매핑), 큐마다 작업 스레드를 하나씩 두어 요청 사이에 지연을 둔다.</p>
+        </details>
+        <details>
+            <summary>6. 우선순위와 신선도는 각각 어떻게 해결하나?</summary>
+            <p>우선순위 : 페이지랭크, 트래픽 양 등으로 순위를 매겨 우선순위별 큐를 두고 높은 큐를 더 자주 선택. 신선도 : 이미 받은 페이지도 주기적으로 재수집하고, 변경 이력과 중요도에 따라 자주 한다.</p>
+        </details>
+        <details>
+            <summary>7. 거미 덫이란? 어떻게 피하나?</summary>
+            <p>크롤러가 끝없이 깊은 링크에 갇히게 만드는 페이지. URL 최대 길이를 제한하고 수동으로 찾아 필터에 추가한다.</p>
+        </details>
+        <details>
+            <summary>8. robots.txt 는?</summary>
+            <p>사이트가 크롤러에게 수집 가능한 페이지를 알려 주는 표준 파일. 크롤링 전에 먼저 확인하고 캐시한다.</p>
+        </details>
+
+        <h2>더 공부할 거리 <span class="add">보충</span></h2>
+        <ul>
+            <li>페이지랭크 알고리즘</li>
+            <li>블룸 필터 (URL 중복 확인)</li>
+            <li>검색 엔진 인덱싱 (역색인), 분산 큐 (Kafka)</li>
+        </ul>
+
+        <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch08.html">← 8장</a></p>
+    </body>
+</html>
