@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<!-- 시스템 아키텍처 노트 11장 : 뉴스 피드 시스템 설계 (원본 : insu_study/system_architecture/ch11_*.md) -->
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>시스템 설계 11장 - 뉴스 피드</title>
+        <link href="./css/system_architecture.css" rel="stylesheet">
+        <script src="./js/mobile_table.js" defer></script>
+        <script src="./js/mobile_code.js" defer></script>
+    </head>
+    <body>
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker></defs></svg>
+        <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch10.html">← 10장</a> | <a href="./system_architecture_ch12.html">12장 →</a></p>
+        <h1>11장. 뉴스 피드 시스템 설계</h1>
+        <p>
+            홈 화면에 계속 갱신되는 친구들의 소식. 핵심은 <strong>팬아웃(fanout)</strong>.<br/>
+            <span class="add">보충</span> 표시는 공부 노트에 없던 내용을 보강한 부분이다.
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>1. 뉴스 피드란</h2>
+        <ul>
+            <li>홈 페이지 중앙에 <strong>지속적으로 갱신되는 스토리</strong> (상태 업데이트, 사진, 비디오, 링크, 친구·페이지·그룹의 소식)</li>
+            <li><span class="add">보충</span> 책의 요구사항 : 모바일 앱·웹 / <strong>포스팅</strong>을 올리고 <strong>친구 피드</strong>를 봄 / 시간 <strong>역순</strong> 정렬(단순화) / 친구 최대 5,000명 / DAU 1천만 / 이미지·비디오 포함</li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <h2>2. 뉴스 피드 API</h2>
+        <p>클라이언트가 서버와 통신하기 위한 수단. <strong>HTTP 프로토콜 기반</strong>.</p>
+        <table>
+            <tr><th>API</th><th>설명</th></tr>
+            <tr><td>피드 발행 API</td><td><code>POST /v1/me/feed</code> : 본문(content)과 인증 토큰(auth_token)으로 <strong>새 포스팅을 올린다</strong></td></tr>
+            <tr><td>피드 읽기 API</td><td><code>GET /v1/me/feed</code> : 인증 토큰으로 <strong>뉴스 피드를 가져온다</strong></td></tr>
+        </table>
+
+        <!-- ============================================================ -->
+        <h2>3. 개략적 설계</h2>
+        <table>
+            <tr><th>컴포넌트</th><th>하는 일</th></tr>
+            <tr><td>사용자</td><td>모바일 앱 / 브라우저. <strong>포스팅을 올리는 주체</strong></td></tr>
+            <tr><td>로드 밸런서</td><td>트래픽을 <strong>웹 서버들로 분산</strong></td></tr>
+            <tr><td>웹 서버</td><td>HTTP 요청을 <strong>내부 서비스로 중계</strong></td></tr>
+            <tr><td>포스팅 서비스</td><td><strong>새 포스팅을 DB 와 캐시에 저장</strong></td></tr>
+            <tr><td>포스팅 전송 서비스<br/>(팬아웃 서비스)</td><td><strong>새 포스팅을 친구의 뉴스 피드에 푸시</strong>한다 (뉴스 피드 캐시에 기록)</td></tr>
+            <tr><td>알림 서비스</td><td><strong>친구들에게 알리거나 푸시 알림</strong>을 보낸다 (10장)</td></tr>
+        </table>
+        <figure class="diagram"><svg viewBox="0 0 360 245" role="img" aria-label="피드 발행 흐름">
+            <rect class="gray" x="5" y="14" width="70" height="36" rx="6"/><text x="40" y="36" text-anchor="middle" class="b">사용자</text>
+            <rect class="box" x="95" y="14" width="80" height="36" rx="6"/><text x="135" y="36" text-anchor="middle">로드 밸런서</text>
+            <rect class="box" x="195" y="14" width="80" height="36" rx="6"/><text x="235" y="36" text-anchor="middle">웹 서버</text>
+            <path class="line" d="M75,32 H95"/><path class="line" d="M175,32 H195"/>
+            <rect class="yellow" x="8" y="96" width="108" height="40" rx="6"/><text x="62" y="113" text-anchor="middle" class="b">포스팅 서비스</text><text x="62" y="128" text-anchor="middle" class="sm">저장</text>
+            <rect class="yellow" x="126" y="96" width="108" height="40" rx="6"/><text x="180" y="113" text-anchor="middle" class="b">포스팅 전송</text><text x="180" y="128" text-anchor="middle" class="sm">(팬아웃) 서비스</text>
+            <rect class="yellow" x="244" y="96" width="108" height="40" rx="6"/><text x="298" y="113" text-anchor="middle" class="b">알림 서비스</text><text x="298" y="128" text-anchor="middle" class="sm">푸시 알림</text>
+            <path class="line" d="M215,50 L62,96"/><path class="line" d="M235,50 L180,96"/><path class="line" d="M255,50 L298,96"/>
+            <rect class="green" x="8" y="180" width="108" height="40" rx="6"/><text x="62" y="197" text-anchor="middle">포스팅</text><text x="62" y="212" text-anchor="middle" class="sm">DB · 캐시</text>
+            <rect class="green" x="126" y="180" width="108" height="40" rx="6"/><text x="180" y="197" text-anchor="middle">뉴스 피드 캐시</text><text x="180" y="212" text-anchor="middle" class="sm">친구별 post ID</text>
+            <rect class="gray" x="244" y="180" width="108" height="40" rx="6"/><text x="298" y="205" text-anchor="middle">친구들에게 알림</text>
+            <path class="line" d="M62,136 V180"/><path class="line" d="M180,136 V180"/><path class="line" d="M298,136 V180"/>
+        </svg><figcaption>피드 발행 : 웹 서버가 세 서비스로 일을 나눠 준다</figcaption></figure>
+
+        <!-- ============================================================ -->
+        <h2>4. 상세 설계</h2>
+        <h3>웹 서버</h3>
+        <ul>
+            <li>클라이언트와 통신하고 <strong>인증</strong>(올바른 auth_token 인지), <strong>처리율 제한</strong>(4장 : 도배·스팸 방지) 등을 수행</li>
+        </ul>
+
+        <h3>포스팅 전송 서비스 : 팬아웃(fanout)</h3>
+        <p><strong>팬아웃</strong> : 한 사용자의 포스팅을 <strong>그 친구 모두에게 전달</strong>하는 과정. 두 가지 모델이 있다.</p>
+        <figure class="diagram"><svg viewBox="0 0 360 225" role="img" aria-label="쓰기 시점과 읽기 시점 팬아웃 비교">
+            <text x="90" y="16" text-anchor="middle" class="b">쓰기 시점 (push)</text>
+            <rect class="gray" x="8" y="26" width="164" height="40" rx="6"/><text x="90" y="51" text-anchor="middle">포스팅을 쓰는 순간</text>
+            <path class="line" d="M90,66 V84"/>
+            <rect class="green" x="8" y="86" width="164" height="50" rx="6"/><text x="90" y="106" text-anchor="middle">친구들의 피드 캐시에</text><text x="90" y="124" text-anchor="middle" class="b">미리 넣어 둠</text>
+            <path class="line" d="M90,136 V154"/>
+            <rect class="box" x="8" y="156" width="164" height="34" rx="6"/><text x="90" y="178" text-anchor="middle">읽기 : 캐시만 읽으면 끝</text>
+            <text x="90" y="208" text-anchor="middle" style="fill:#d33" class="sm">친구가 많으면 쓰기가 오래 걸림</text>
+            <path d="M180,10 V215" stroke="#ccc" fill="none"/>
+            <text x="270" y="16" text-anchor="middle" class="b">읽기 시점 (pull)</text>
+            <rect class="gray" x="188" y="26" width="164" height="40" rx="6"/><text x="270" y="51" text-anchor="middle">포스팅은 저장만</text>
+            <path class="line" d="M270,66 V84"/>
+            <rect class="yellow" x="188" y="86" width="164" height="50" rx="6"/><text x="270" y="106" text-anchor="middle">피드를 읽는 순간</text><text x="270" y="124" text-anchor="middle" class="b">친구 포스팅을 모아서 생성</text>
+            <path class="line" d="M270,136 V154"/>
+            <rect class="box" x="188" y="156" width="164" height="34" rx="6"/><text x="270" y="178" text-anchor="middle">읽기가 느림</text>
+            <text x="270" y="208" text-anchor="middle" style="fill:#1e7a3c" class="sm">비활성 사용자 낭비 · 핫키 문제 없음</text>
+        </svg><figcaption>미리 만들어 두느냐(push), 읽을 때 만드느냐(pull)</figcaption></figure>
+        <table>
+            <tr><th></th><th>쓰기 시점 팬아웃 (push)</th><th>읽기 시점 팬아웃 (pull)</th></tr>
+            <tr><td>시점</td><td>포스팅을 쓰는 순간 친구들의 피드를 <strong>미리 계산</strong>해 캐시에 넣음</td><td>피드를 읽는 순간 친구들의 포스팅을 모아 <strong>생성</strong></td></tr>
+            <tr><td>👍 장점</td><td>피드가 <strong>실시간으로 생성</strong>되고, 읽을 때 캐시만 읽으면 되어 <strong>빠름</strong></td><td><strong>비활성 사용자</strong>의 피드까지 만드는 낭비가 없다. <strong>핫키 문제 없음</strong></td></tr>
+            <tr><td>👎 단점</td><td><strong>친구가 많으면 갱신이 오래</strong> 걸림(핫키 문제). 접속 안 하는 사용자의 피드까지 계산해 <strong>낭비</strong></td><td>피드를 읽을 때 만들어서 <strong>느리다</strong></td></tr>
+        </table>
+        <div class="key">
+            <strong>혼합 방식</strong> : 대부분의 사용자는 <strong>쓰기 시점(push)</strong>, 친구·팔로어가 아주 많은 <strong>유명인은 읽기 시점(pull)</strong> 으로 핫키 문제를 피한다.
+            <span class="add">보충</span> 안정 해시(5장)로 요청과 데이터를 고르게 분산해 핫키를 완화한다.
+        </div>
+
+        <h3>팬아웃 서비스의 동작</h3>
+        <div class="flow">
+            <ol>
+                <li><strong>그래프 DB</strong> 에서 <strong>친구 ID 목록</strong>을 가져온다 (친구 관계 저장에 적합)</li>
+                <li><strong>사용자 정보 캐시/DB</strong> 에서 친구 정보를 가져온다. <strong>설정으로 차단·음소거한 친구는 제외</strong></li>
+                <li><strong>친구 목록 + 새 포스팅 ID</strong> 를 <strong>메시지 큐</strong>에 넣는다</li>
+                <li><strong>팬아웃 작업 서버</strong>가 큐에서 꺼내 <strong>뉴스 피드 캐시</strong>에 <code>&lt;post_id, user_id&gt;</code> 순서쌍으로 저장</li>
+            </ol>
+        </div>
+        <ul>
+            <li><strong>포스팅 전체 객체가 아니라 ID 만</strong> 저장 → <strong>메모리 절약</strong></li>
+            <li>캐시 크기에 <strong>제한</strong>을 둔다 (사용자는 보통 최근 포스팅에만 관심)</li>
+            <li>한 사용자는 여러 개의 <code>&lt;post_id, user_id&gt;</code> 를 갖는다 (여러 친구의 포스팅)</li>
+        </ul>
+
+        <h3>피드 읽기 흐름</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 215" role="img" aria-label="피드 읽기 흐름">
+            <rect class="gray" x="5" y="14" width="70" height="36" rx="6"/><text x="40" y="36" text-anchor="middle" class="b">사용자</text>
+            <rect class="box" x="95" y="14" width="70" height="36" rx="6"/><text x="130" y="36" text-anchor="middle" class="sm">로드 밸런서</text>
+            <rect class="box" x="185" y="14" width="70" height="36" rx="6"/><text x="220" y="36" text-anchor="middle">웹 서버</text>
+            <rect class="yellow" x="275" y="14" width="80" height="36" rx="6"/><text x="315" y="30" text-anchor="middle">뉴스 피드</text><text x="315" y="44" text-anchor="middle">서비스</text>
+            <path class="line" d="M75,32 H95"/><path class="line" d="M165,32 H185"/><path class="line" d="M255,32 H275"/>
+            <rect class="green" x="245" y="96" width="110" height="38" rx="6"/><text x="300" y="113" text-anchor="middle" class="b">뉴스 피드 캐시</text><text x="300" y="127" text-anchor="middle" class="sm">포스팅 ID 목록</text>
+            <rect class="green" x="245" y="168" width="110" height="38" rx="6"/><text x="300" y="185" text-anchor="middle" class="b">사용자·콘텐츠</text><text x="300" y="199" text-anchor="middle" class="sm">캐시 / DB</text>
+            <path class="line" d="M315,50 V96"/><text x="325" y="78" class="sm">④ ID</text>
+            <path class="line" d="M300,134 V168"/><text x="310" y="155" class="sm">⑤ 상세</text>
+            <text x="8" y="86" class="sm">① 읽기 요청</text>
+            <text x="8" y="104" class="sm">② 로드 밸런서가 웹 서버로</text>
+            <text x="8" y="122" class="sm">③ 뉴스 피드 서비스 호출</text>
+            <text x="8" y="140" class="sm">④ 캐시에서 포스팅 ID 목록</text>
+            <text x="8" y="158" class="sm">⑤ 이름·사진·콘텐츠 조회</text>
+            <text x="8" y="176" class="sm">⑥ 완성된 피드를 JSON 으로</text><text x="8" y="192" class="sm">   클라이언트에 응답</text>
+        </svg><figcaption>캐시에서 ID 만 가져오고, 사용자·콘텐츠 정보를 채워 JSON 으로 응답</figcaption></figure>
+        <div class="flow">
+            <ol>
+                <li>사용자가 뉴스 피드를 <strong>읽는 요청</strong>을 보낸다</li>
+                <li><strong>로드 밸런서</strong>가 요청을 웹 서버 중 하나로 보낸다</li>
+                <li>웹 서버는 <strong>뉴스 피드 서비스</strong>를 호출한다</li>
+                <li>뉴스 피드 서비스는 <strong>뉴스 피드 캐시</strong>에서 <strong>포스팅 ID 목록</strong>을 가져온다</li>
+                <li>표시할 <strong>사용자 이름, 사진, 콘텐츠</strong> 등을 <strong>사용자 캐시와 DB</strong> 에서 가져와 피드를 완성한다</li>
+                <li><strong>JSON</strong> 형태로 클라이언트에 보낸다</li>
+            </ol>
+        </div>
+
+        <h3>캐시 구조 (5개 계층) <span class="add">보충</span></h3>
+        <table>
+            <tr><th>계층</th><th>저장하는 것</th></tr>
+            <tr><td>뉴스 피드</td><td>뉴스 피드의 <strong>ID</strong> 목록</td></tr>
+            <tr><td>콘텐츠</td><td>포스팅 데이터. <strong>인기 콘텐츠는 따로 핫 캐시</strong></td></tr>
+            <tr><td>소셜 그래프</td><td>사용자 간 관계 (친구, 팔로우)</td></tr>
+            <tr><td>행동</td><td>좋아요, 답글 등 포스팅에 대한 사용자 행동</td></tr>
+            <tr><td>횟수</td><td>좋아요 수, 응답 수, 팔로어 수 등</td></tr>
+        </table>
+
+        <h2>5. 마무리 : 규모 확장 고려 <span class="add">보충</span></h2>
+        <ul>
+            <li><strong>DB 규모 확장</strong> : 수직 vs 수평, SQL vs NoSQL, 주-부 다중화, 읽기용 복제본, 일관성 모델, <strong>샤딩</strong></li>
+            <li><strong>웹 계층을 무상태</strong>로 / 가능한 많은 데이터를 <strong>캐시</strong> / <strong>여러 데이터 센터</strong> 지원</li>
+            <li><strong>메시지 큐</strong>로 컴포넌트 결합 약화 / <strong>핵심 지표 모니터링</strong> (피크 QPS, 피드 새로고침 지연 시간)</li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <h2>복습 퀴즈 (눌러서 답 확인)</h2>
+        <details>
+            <summary>1. 피드 발행 API 와 피드 읽기 API 는?</summary>
+            <p>발행 : POST /v1/me/feed (content, auth_token). 읽기 : GET /v1/me/feed (auth_token).</p>
+        </details>
+        <details>
+            <summary>2. 포스팅 서비스, 팬아웃 서비스, 알림 서비스의 역할은?</summary>
+            <p>포스팅 서비스 : 포스팅을 DB·캐시에 저장. 팬아웃 서비스 : 새 포스팅을 친구들의 뉴스 피드에 전달. 알림 서비스 : 친구들에게 알림·푸시 알림.</p>
+        </details>
+        <details>
+            <summary>3. 쓰기 시점 팬아웃과 읽기 시점 팬아웃의 장단점은?</summary>
+            <p>쓰기 시점 : 읽기가 빠르고 실시간이지만 친구가 많으면 느리고 비활성 사용자 계산이 낭비. 읽기 시점 : 낭비와 핫키 문제가 없지만 읽을 때 느림.</p>
+        </details>
+        <details>
+            <summary>4. 유명인 문제는 어떻게 푸나?</summary>
+            <p>일반 사용자는 쓰기 시점(push), 친구·팔로어가 아주 많은 유명인은 읽기 시점(pull)으로 처리하는 혼합 방식. 안정 해시로 분산해 핫키도 완화.</p>
+        </details>
+        <details>
+            <summary>5. 뉴스 피드 캐시에 포스팅 전체가 아니라 ID 만 저장하는 이유는?</summary>
+            <p>메모리를 아끼기 위해서. 내용은 읽을 때 콘텐츠 캐시/DB 에서 가져온다.</p>
+        </details>
+        <details>
+            <summary>6. 피드 읽기 흐름 6단계는?</summary>
+            <p>읽기 요청 → 로드 밸런서 → 웹 서버 → 뉴스 피드 서비스 → 피드 캐시에서 포스팅 ID 목록 → 사용자·콘텐츠 정보로 피드 완성 → JSON 응답.</p>
+        </details>
+
+        <h2>더 공부할 거리 <span class="add">보충</span></h2>
+        <ul>
+            <li>그래프 DB (Neo4j), 소셜 그래프</li>
+            <li>피드 랭킹 알고리즘</li>
+            <li>핫키 문제와 캐시 설계</li>
+        </ul>
+
+        <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch10.html">← 10장</a> | <a href="./system_architecture_ch12.html">12장 →</a></p>
+    </body>
+</html>

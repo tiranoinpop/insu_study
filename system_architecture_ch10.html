@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<!-- 시스템 아키텍처 노트 10장 : 알림 시스템 설계 (원본 : insu_study/system_architecture/ch10_*.md) -->
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>시스템 설계 10장 - 알림 시스템</title>
+        <link href="./css/system_architecture.css" rel="stylesheet">
+        <script src="./js/mobile_table.js" defer></script>
+        <script src="./js/mobile_code.js" defer></script>
+    </head>
+    <body>
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker></defs></svg>
+        <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch09.html">← 9장</a> | <a href="./system_architecture_ch11.html">11장 →</a></p>
+        <h1>10장. 알림 시스템 설계</h1>
+        <p>
+            Notification System. 1장의 <strong>메시지 큐</strong>, 4장의 <strong>처리율 제한</strong>이 쓰인다.<br/>
+            <span class="add">보충</span> 표시는 공부 노트에 없던 내용을 보강한 부분이다.
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>1. 알림의 종류</h2>
+        <ul>
+            <li>인기 있는 기능 : <strong>모바일 푸시 알림</strong>, <strong>SMS 메시지</strong>, <strong>이메일</strong></li>
+            <li><span class="add">보충</span> 책의 요구사항 : <strong>soft real-time</strong>(약간 지연 OK) / iOS·Android·PC 지원 / 사용자가 <strong>알림을 끌 수 있음(opt-out)</strong> / 하루 푸시 1천만, SMS 100만, 이메일 500만 건</li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <h2>2. 알림 유형별 전달 구조</h2>
+        <figure class="diagram"><svg viewBox="0 0 360 190" role="img" aria-label="알림 유형별 전달 구조">
+            <rect class="yellow" x="5" y="14" width="96" height="40" rx="6"/><text x="53" y="31" text-anchor="middle" class="b">알림 제공자</text><text x="53" y="46" text-anchor="middle" class="sm">토큰 + 페이로드</text>
+            <rect class="green" x="135" y="14" width="96" height="40" rx="6"/><text x="183" y="39" text-anchor="middle" class="b">APNS</text>
+            <rect class="gray" x="265" y="14" width="88" height="40" rx="6"/><text x="309" y="39" text-anchor="middle">iOS 단말</text>
+            <path class="line" d="M101,34 H135"/><path class="line" d="M231,34 H265"/>
+            <rect class="yellow" x="5" y="76" width="96" height="40" rx="6"/><text x="53" y="93" text-anchor="middle" class="b">알림 제공자</text><text x="53" y="108" text-anchor="middle" class="sm">토큰 + 페이로드</text>
+            <rect class="green" x="135" y="76" width="96" height="40" rx="6"/><text x="183" y="101" text-anchor="middle" class="b">FCM</text>
+            <rect class="gray" x="265" y="76" width="88" height="40" rx="6"/><text x="309" y="101" text-anchor="middle">Android 단말</text>
+            <path class="line" d="M101,96 H135"/><path class="line" d="M231,96 H265"/>
+            <rect class="yellow" x="5" y="138" width="96" height="40" rx="6"/><text x="53" y="155" text-anchor="middle" class="b">알림 제공자</text><text x="53" y="170" text-anchor="middle" class="sm">전화번호 + 문구</text>
+            <rect class="green" x="135" y="138" width="96" height="40" rx="6"/><text x="183" y="163" text-anchor="middle" class="b">SMS 서비스</text>
+            <rect class="gray" x="265" y="138" width="88" height="40" rx="6"/><text x="309" y="163" text-anchor="middle">휴대폰</text>
+            <path class="line" d="M101,158 H135"/><path class="line" d="M231,158 H265"/>
+        </svg><figcaption>알림 제공자가 제3자 서비스(APNS, FCM, SMS 서비스)에 요청하고, 그쪽이 실제 단말로 전달</figcaption></figure>
+        <table>
+            <tr><th>유형</th><th>구성 요소</th></tr>
+            <tr><td>iOS 푸시</td><td>알림 제공자 → <strong>APNS</strong> (Apple Push Notification Service) → 단말</td></tr>
+            <tr><td>Android 푸시</td><td>알림 제공자 → <strong>FCM</strong> (Firebase Cloud Messaging) → 단말</td></tr>
+            <tr><td>SMS</td><td>알림 제공자 → <strong>SMS 서비스</strong> (Twilio, Nexmo 등) → 단말</td></tr>
+            <tr><td>이메일</td><td>알림 제공자 → <strong>이메일 서비스</strong> (SendGrid, Mailchimp 등) → 단말</td></tr>
+        </table>
+        <ul>
+            <li><strong>알림 제공자(provider)</strong> : 알림 요청을 만들어 제3자 서비스로 보내는 주체. 필요한 것
+                <ul>
+                    <li><strong>단말 토큰</strong> (device token) : 알림 요청을 보내는 데 쓰는 고유 식별자</li>
+                    <li><strong>페이로드</strong> (payload) : 알림 내용을 담은 JSON</li>
+                </ul>
+            </li>
+            <li><span class="add">보충</span> 앱 설치·가입 때 단말 토큰, 전화번호, 이메일을 받아 DB 에 저장. 한 사용자가 <strong>여러 단말</strong>을 가질 수 있다</li>
+        </ul>
+<pre><code>{
+  "aps": {
+    "alert": { "title": "새 메시지", "body": "인수님이 댓글을 달았어요" },
+    "badge": 5
+  }
+}</code></pre>
+
+        <!-- ============================================================ -->
+        <h2>3. 개략적 설계안</h2>
+        <div class="flow">
+            <ol>
+                <li><strong>1 ~ N 개 서비스</strong>가 알림 시스템에 알림 전송을 <strong>요청(API)</strong></li>
+                <li>알림 시스템이 제3자 서비스에 전달할 <strong>알림 페이로드</strong>를 만든다</li>
+                <li><strong>제3자 서비스</strong>(APNS, FCM, SMS 서비스, 이메일 서비스)가 <strong>실제로 사용자에게 전달</strong></li>
+            </ol>
+        </div>
+        <table>
+            <tr><th>문제점</th><th>설명</th></tr>
+            <tr><td>SPOF</td><td>알림 서버가 하나뿐이면 장애 시 전체가 멈춘다</td></tr>
+            <tr><td>확장 어려움</td><td>DB, 캐시, 처리 로직을 한 서버가 다 맡음 <span class="add">보충</span></td></tr>
+            <tr><td>성능 병목</td><td>알림 생성과 제3자 응답 대기 같은 자원 집약적 작업을 한곳에서 처리 <span class="add">보충</span></td></tr>
+        </table>
+
+        <h3>개선안</h3>
+        <ul>
+            <li><strong>데이터베이스와 캐시를 알림 시스템의 주 서버에서 분리</strong></li>
+            <li>알림 서버를 <strong>무상태(stateless)</strong> 로 만든다</li>
+            <li>알림 서버를 <strong>증설</strong>하고 <strong>자동으로 수평 확장</strong>이 이루어지게 한다</li>
+            <li><strong>메시지 큐</strong>로 시스템 컴포넌트 사이의 <strong>강한 결합을 끊는다</strong> (유형별로 큐를 분리)</li>
+        </ul>
+        <figure class="diagram"><svg viewBox="0 0 360 330" role="img" aria-label="개선된 알림 시스템 구조">
+            <rect class="gray" x="8" y="12" width="100" height="40" rx="6"/><text x="58" y="36" text-anchor="middle">서비스 1 … N</text>
+            <rect class="box" x="128" y="12" width="130" height="40" rx="6"/><text x="193" y="29" text-anchor="middle" class="b">알림 서버</text><text x="193" y="44" text-anchor="middle" class="sm">무상태 · 여러 대</text>
+            <rect class="green" x="278" y="12" width="74" height="40" rx="6"/><text x="315" y="29" text-anchor="middle" class="b">캐시·DB</text><text x="315" y="44" text-anchor="middle" class="sm">분리</text>
+            <path class="line" d="M108,32 H128"/><path class="line" d="M258,28 H278"/><path class="line" d="M278,40 H258"/>
+            <rect class="yellow" x="8" y="96" width="78" height="32" rx="6"/><text x="47" y="116" text-anchor="middle">iOS 큐</text>
+            <rect class="yellow" x="98" y="96" width="78" height="32" rx="6"/><text x="137" y="116" text-anchor="middle">Android 큐</text>
+            <rect class="yellow" x="188" y="96" width="78" height="32" rx="6"/><text x="227" y="116" text-anchor="middle">SMS 큐</text>
+            <rect class="yellow" x="278" y="96" width="74" height="32" rx="6"/><text x="315" y="116" text-anchor="middle">이메일 큐</text>
+            <path class="line" d="M165,52 L47,96"/><path class="line" d="M180,52 L137,96"/><path class="line" d="M200,52 L227,96"/><path class="line" d="M220,52 L305,96"/>
+            <rect class="box" x="8" y="162" width="78" height="32" rx="6"/><text x="47" y="182" text-anchor="middle">작업 서버</text>
+            <rect class="box" x="98" y="162" width="78" height="32" rx="6"/><text x="137" y="182" text-anchor="middle">작업 서버</text>
+            <rect class="box" x="188" y="162" width="78" height="32" rx="6"/><text x="227" y="182" text-anchor="middle">작업 서버</text>
+            <rect class="box" x="278" y="162" width="74" height="32" rx="6"/><text x="315" y="182" text-anchor="middle">작업 서버</text>
+            <path class="line" d="M47,128 V162"/><path class="line" d="M137,128 V162"/><path class="line" d="M227,128 V162"/><path class="line" d="M315,128 V162"/>
+            <rect class="green" x="8" y="228" width="78" height="32" rx="6"/><text x="47" y="248" text-anchor="middle">APNS</text>
+            <rect class="green" x="98" y="228" width="78" height="32" rx="6"/><text x="137" y="248" text-anchor="middle">FCM</text>
+            <rect class="green" x="188" y="228" width="78" height="32" rx="6"/><text x="227" y="248" text-anchor="middle">SMS 서비스</text>
+            <rect class="green" x="278" y="228" width="74" height="32" rx="6"/><text x="315" y="248" text-anchor="middle">이메일</text>
+            <path class="line" d="M47,194 V228"/><path class="line" d="M137,194 V228"/><path class="line" d="M227,194 V228"/><path class="line" d="M315,194 V228"/>
+            <rect class="gray" x="8" y="290" width="344" height="30" rx="6"/><text x="180" y="310" text-anchor="middle">사용자 단말 (iOS · Android · 휴대폰 · 메일함)</text>
+            <path class="line" d="M47,260 V290"/><path class="line" d="M137,260 V290"/><path class="line" d="M227,260 V290"/><path class="line" d="M315,260 V290"/>
+        </svg><figcaption>알림 서버는 큐에 넣기만 하고, 작업 서버들이 꺼내서 제3자 서비스로 보낸다</figcaption></figure>
+
+        <h3>개선된 흐름</h3>
+        <div class="flow">
+            <ol>
+                <li>서비스가 <strong>API 를 호출</strong>해 알림 서버로 알림을 보낸다</li>
+                <li>알림 서버가 <strong>사용자 정보, 단말 토큰, 알림 설정</strong> 같은 메타데이터를 <strong>캐시나 DB</strong> 에서 가져온다</li>
+                <li>알림 서버가 전송할 알림에 맞는 <strong>이벤트를 만들어 해당 큐에 넣는다</strong></li>
+                <li><strong>작업 서버</strong>가 메시지 큐에서 알림 이벤트를 꺼낸다</li>
+                <li>작업 서버가 알림을 <strong>제3자 서비스</strong>로 보낸다</li>
+                <li>제3자 서비스가 <strong>사용자 단말로 알림</strong>을 전송한다</li>
+            </ol>
+        </div>
+        <p class="tip">
+            <span class="add">보충</span> 알림 서버의 기능 : 알림 전송 <strong>API</strong> 제공(스팸 방지를 위해 <strong>인증된 클라이언트만</strong>) /
+            이메일 주소·전화번호 <strong>기본 검증</strong> / 캐시·DB 조회 / 알림 데이터를 큐에 넣기
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>4. 고려할 사항들</h2>
+        <h3>안정성</h3>
+        <table>
+            <tr><th>항목</th><th>설명</th></tr>
+            <tr><td>데이터 손실 방지</td><td>알림이 <strong>소실되면 안 된다</strong> → <strong>알림 로그를 DB 에 유지</strong>하고 재시도</td></tr>
+            <tr><td>알림 중복 전송 방지</td><td>분산 시스템 특성상 <strong>완전히 막기는 어렵다</strong>. <span class="add">보충</span> <strong>이벤트 ID</strong> 로 이미 보낸 알림인지 확인하는 <strong>중복 탐지</strong>로 줄인다</td></tr>
+        </table>
+        <h3>그 밖에</h3>
+        <table>
+            <tr><th>항목</th><th>설명</th></tr>
+            <tr><td>알림 템플릿</td><td>형식을 미리 만들어 두고 매개변수만 채움 → 일관성, 작업 시간 단축</td></tr>
+            <tr><td>알림 설정</td><td>사용자별·채널별 수신 여부를 <strong>알림 설정 테이블</strong>에 보관</td></tr>
+            <tr><td>전송률 제한</td><td>사용자에게 보내는 알림 수 제한 (너무 많으면 꺼 버림) → 4장</td></tr>
+            <tr><td>재시도 방법</td><td>제3자 전송 실패 시 <strong>다시 큐에 넣어</strong> 재시도</td></tr>
+            <tr><td>푸시 알림 보안 <span class="add">보충</span></td><td>인증된 클라이언트만 보낼 수 있게 <code>appKey</code>, <code>appSecret</code> 사용</td></tr>
+            <tr><td>큐 모니터링</td><td>큐에 쌓인 알림 수가 많으면 <strong>작업 서버가 부족</strong> → 증설</td></tr>
+            <tr><td>이벤트 추적</td><td>알림 <strong>열람률, 클릭률, 앱 사용(engagement)</strong> 을 추적 (분석 서비스 연동)</td></tr>
+        </table>
+
+        <!-- ============================================================ -->
+        <h2>복습 퀴즈 (눌러서 답 확인)</h2>
+        <details>
+            <summary>1. iOS 푸시를 보내기 위한 세 가지 컴포넌트는? Android 는?</summary>
+            <p>iOS : 알림 제공자, APNS, 단말. Android : 알림 제공자, FCM, 단말.</p>
+        </details>
+        <details>
+            <summary>2. 단말 토큰과 페이로드는?</summary>
+            <p>단말 토큰 : 알림을 보낼 단말을 가리키는 고유 식별자. 페이로드 : 알림 내용을 담은 JSON.</p>
+        </details>
+        <details>
+            <summary>3. 첫 설계의 문제점과 개선안은?</summary>
+            <p>알림 서버가 하나라 SPOF 이고 확장이 어렵다. 개선 : DB·캐시 분리, 알림 서버 무상태화와 증설(자동 확장), 메시지 큐로 결합 약화.</p>
+        </details>
+        <details>
+            <summary>4. 메시지 큐를 쓰면 좋은 점은?</summary>
+            <p>알림 서버와 작업 서버가 느슨하게 결합되어 각각 독립적으로 확장·장애 대응이 가능하고, 제3자 응답이 느려도 알림 서버가 막히지 않는다.</p>
+        </details>
+        <details>
+            <summary>5. 알림 중복 전송을 완전히 막기 어려운 이유와 줄이는 방법은?</summary>
+            <p>분산 시스템에서는 재시도 등으로 같은 알림이 두 번 갈 수 있다. 이벤트 ID 를 확인해 이미 보낸 알림이면 버리는 방식으로 줄인다.</p>
+        </details>
+        <details>
+            <summary>6. 큐 모니터링으로 무엇을 알 수 있나?</summary>
+            <p>큐에 쌓인 알림이 많으면 작업 서버가 부족하다는 신호이므로 작업 서버를 늘린다.</p>
+        </details>
+
+        <h2>더 공부할 거리 <span class="add">보충</span></h2>
+        <ul>
+            <li>APNS / FCM 동작 방식, 단말 토큰 갱신</li>
+            <li>큐 기반 재시도와 Dead Letter Queue</li>
+            <li>알림 분석 (열람률, 전환율)</li>
+        </ul>
+
+        <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch09.html">← 9장</a> | <a href="./system_architecture_ch11.html">11장 →</a></p>
+    </body>
+</html>
