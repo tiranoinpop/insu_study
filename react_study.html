@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<!-- React 공부 노트 : 교재 "초보자를 위한 리액트 200제" (create-react-app 기준) 를 Vite + React 19 환경에서 따라 하며 정리 -->
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>React 공부 노트</title>
+        <link href="./css/react_study.css" rel="stylesheet">
+        <script src="./js/mobile_table.js" defer></script>
+        <script src="./js/mobile_code.js" defer></script>
+    </head>
+    <body>
+        <p><a href="./index.html">← 대문으로</a> | <a href="./javascript_study.html">← JavaScript 노트</a></p>
+        <h1>React 공부 노트</h1>
+        <p>
+            교재 : <strong>초보자를 위한 리액트 200제</strong> (책은 옛 create-react-app 기준, 실습은 <strong>Vite + React 19</strong>).<br/>
+            <span class="add">보충</span> 표시는 공부 노트에 없던 내용을 보강한 부분이다.
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>0. 환경 구축</h2>
+        <h3>0-1. 설치와 프로젝트 만들기</h3>
+        <div class="flow">
+            <ol>
+                <li><strong>Node.js</strong> 설치 (npm 이 함께 설치된다)</li>
+                <li>공부 폴더에서 Vite 로 React 프로젝트 생성 : <code>npm create vite@latest react_study -- --template react</code> (린터는 ESLint 선택)</li>
+                <li><code>react_study</code> 디렉터리로 가서 <code>npm install</code> (처음 한 번)</li>
+                <li><code>npm run dev</code> 실행</li>
+                <li><code>http://localhost:5173/</code> 로 접속하면 <strong>내가 로컬로 서비스하고 있는 웹</strong>에 접속할 수 있다</li>
+            </ol>
+        </div>
+        <p class="tip">
+            <span class="add">보충</span> <code>npm run dev</code> 를 실행한 터미널은 <strong>개발 서버</strong>라서 계속 켜져 있어야 한다. 창을 닫거나 <code>Ctrl + C</code> 를 누르면 서버가 꺼진다.
+            파일을 저장하면 브라우저가 <strong>새로고침 없이 바로 바뀐다</strong> (HMR : Hot Module Replacement).
+        </p>
+
+        <h3>0-2. 왜 create-react-app 이 아니라 Vite 인가 <span class="add">보충</span></h3>
+        <ul>
+            <li>책의 <code>create-react-app</code>(CRA) 은 <strong>2025년에 공식 지원 종료</strong>됐다. 설치하면 deprecated 경고가 줄줄이 나온다</li>
+            <li>요즘 표준은 <strong>Vite</strong> : 설치 없이 <code>npm create</code> 로 만들고, 개발 서버가 거의 즉시 뜬다</li>
+        </ul>
+        <table>
+            <tr><th>책 (CRA)</th><th>내 프로젝트 (Vite)</th></tr>
+            <tr><td><code>src/App.js</code></td><td><strong><code>src/App.jsx</code></strong></td></tr>
+            <tr><td><code>src/index.js</code></td><td><strong><code>src/main.jsx</code></strong> (시작 파일)</td></tr>
+            <tr><td><code>public/index.html</code></td><td>프로젝트 최상위 <code>index.html</code></td></tr>
+            <tr><td><code>npm start</code></td><td><strong><code>npm run dev</code></strong></td></tr>
+            <tr><td><code>localhost:3000</code></td><td><strong><code>localhost:5173</code></strong></td></tr>
+            <tr><td>새 파일 <code>R001_xxx.js</code></td><td><strong><code>R001_xxx.jsx</code></strong> (JSX 가 있으면 확장자 <code>.jsx</code>)</td></tr>
+            <tr><td><code>ReactDOM.render(...)</code></td><td><strong>React 19 에서 삭제</strong>됨. <code>main.jsx</code> 의 <code>createRoot(...).render(...)</code> 를 그대로 둔다</td></tr>
+        </table>
+
+        <h3>0-3. 프로젝트 구조 <span class="add">보충</span></h3>
+<pre><code>react_study/
+├─ index.html          // 브라우저가 처음 여는 유일한 HTML (&lt;div id="root"&gt; 하나뿐)
+├─ package.json        // 프로젝트 정보, 실행 명령(scripts), 라이브러리 목록
+├─ vite.config.js      // Vite 설정
+├─ node_modules/       // 설치된 라이브러리 (건드리지 않음, git 에 안 올림)
+├─ public/             // 가공 없이 그대로 쓰는 파일 (favicon 등)
+└─ src/                // ★ 코드를 작성하는 곳
+    ├─ main.jsx        // 시작점 : root 에 &lt;App /&gt; 를 그린다
+    ├─ App.jsx         // 첫 화면 컴포넌트 (여기를 고치며 공부)
+    ├─ App.css         // 스타일
+    └─ assets/         // 이미지</code></pre>
+        <div class="flow">
+            <ol>
+                <li><code>index.html</code> 에는 빈 상자 <code>&lt;div id="root"&gt;&lt;/div&gt;</code> 만 있다</li>
+                <li><code>main.jsx</code> 가 <code>document.getElementById('root')</code> 를 찾아 그 안에 <code>&lt;App /&gt;</code> 를 그린다</li>
+                <li><code>App.jsx</code> 가 실제 화면 내용을 <strong>JSX</strong> 로 돌려준다</li>
+            </ol>
+        </div>
+        <table>
+            <tr><th>명령</th><th>하는 일</th></tr>
+            <tr><td><code>npm run dev</code></td><td>개발 서버 실행</td></tr>
+            <tr><td><code>npm run build</code></td><td>배포용 결과물을 <code>dist/</code> 에 생성</td></tr>
+            <tr><td><code>npm run preview</code></td><td>build 결과 미리 보기</td></tr>
+            <tr><td><code>npm run lint</code></td><td>ESLint 로 코드 검사</td></tr>
+        </table>
+        <p class="tip">
+            <span class="add">보충</span> VS Code 를 켜 둔 채로 Node.js 를 설치하면 하단 터미널에서 <code>npm</code> 을 못 찾는다
+            (<code>'npm' 용어가 ... 인식되지 않습니다</code>). 프로그램은 <strong>켜질 때의 PATH</strong> 를 쓰기 때문.
+            → <strong>VS Code 를 완전히 껐다 켜면</strong> 해결.
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>1. JSX 에 HTML 적용하기 (예제 1)</h2>
+        <p>
+            <strong>JSX</strong> : JavaScript 안에 HTML 처럼 화면을 적는 문법. 컴포넌트(함수)가 <code>return</code> 으로 JSX 를 돌려주면 React 가 그걸 화면에 그린다.
+        </p>
+<pre><code>// src/App.jsx
+function App() {
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;Hello React 200제&lt;/h1&gt;
+    &lt;/div&gt;
+  )
+}
+
+export default App      // 다른 파일(main.jsx)에서 가져다 쓸 수 있게 내보내기</code></pre>
+        <h3>JSX 가 HTML 과 다른 점 <span class="add">보충</span></h3>
+        <table>
+            <tr><th>규칙</th><th>예</th></tr>
+            <tr><td><code>return</code> 하는 JSX 는 <strong>최상위 태그가 하나</strong>여야 한다</td><td><code>&lt;div&gt;...&lt;/div&gt;</code> 로 감싸거나 빈 껍데기 <code>&lt;&gt; ... &lt;/&gt;</code> (Fragment)</td></tr>
+            <tr><td>여러 줄이면 <strong>소괄호 <code>( )</code></strong> 로 감싼다</td><td><code>return ( &lt;div&gt;...&lt;/div&gt; )</code></td></tr>
+            <tr><td>모든 태그는 <strong>닫아야</strong> 한다</td><td><code>&lt;br /&gt;</code>, <code>&lt;img /&gt;</code>, <code>&lt;input /&gt;</code></td></tr>
+            <tr><td><code>class</code> 대신 <strong><code>className</code></strong></td><td><code>&lt;p className="title"&gt;</code> (class 는 JS 예약어)</td></tr>
+            <tr><td>JS 값은 <strong><code>{ }</code></strong> 안에</td><td><code>&lt;p&gt;{1 + 2}&lt;/p&gt;</code>, <code>&lt;p&gt;{name}&lt;/p&gt;</code> (템플릿 리터럴의 <code>${ }</code> 와 비슷)</td></tr>
+            <tr><td>주석은 <code>{/* */}</code></td><td><code>{/* 화면에 안 보이는 메모 */}</code></td></tr>
+        </table>
+
+        <!-- ============================================================ -->
+        <h2>2. JSX 에 CSS 적용하기 (예제 2)</h2>
+        <p>CSS 파일을 만들고 컴포넌트 파일에서 <strong><code>import</code></strong> 하면 적용된다.</p>
+<pre><code>/* src/App.css */
+div {
+  background-color: rgb(162, 127, 243);
+  color: rgb(255, 255, 255);
+  padding: 40px;
+  font-family: 고딕;
+  text-align: center;
+}
+h1 {
+  color: white;
+  background-color: #2EFE2E;
+  padding: 10px;
+  font-family: 궁서;
+}</code></pre>
+<pre><code>// src/App.jsx
+import './App.css'          // CSS 파일 가져오기 (이름 없이 경로만)
+
+function App() {
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;Hello React 200제&lt;/h1&gt;
+      &lt;p&gt;CSS 적용하기&lt;/p&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        <h3>스타일을 주는 방법 <span class="add">보충</span></h3>
+        <table>
+            <tr><th>방법</th><th>예</th><th>특징</th></tr>
+            <tr><td>CSS 파일 import</td><td><code>import './App.css'</code></td><td>CSS 노트에서 배운 그대로. 가장 기본</td></tr>
+            <tr><td>className</td><td><code>&lt;p className="title"&gt;</code> + <code>.title { }</code></td><td>HTML 의 <code>class</code> 와 같은 역할</td></tr>
+            <tr><td>인라인 style</td><td><code>&lt;p style={{ color: 'red', fontSize: 20 }}&gt;</code></td><td>값이 <strong>객체</strong>. 속성 이름은 <strong>카멜 표기</strong>(<code>font-size</code> → <code>fontSize</code>)</td></tr>
+        </table>
+        <p class="tip">
+            <span class="add">보충</span> <code>App.css</code> 를 App 에서 import 해도 <strong>App 에만 적용되는 게 아니라 페이지 전체에 적용</strong>된다.
+            위 예제의 <code>div { }</code> 는 다른 컴포넌트의 <code>div</code> 에도 모두 적용된다. 그래서 보통 태그 선택자보다 <code>className</code> 을 쓴다.
+            <code>style={{ }}</code> 의 바깥 <code>{ }</code> 는 "JS 값을 넣는다", 안쪽 <code>{ }</code> 는 "객체" 라는 뜻이다.
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>3. Component 사용하기 (예제 3)</h2>
+        <p>
+            <strong>컴포넌트</strong> : 화면의 한 조각을 만드는 <strong>재사용 가능한 부품</strong>. 파일로 따로 만들고 <code>export</code> 한 뒤, 쓰는 쪽에서 <code>import</code> 해서 <strong>태그처럼</strong> 사용한다.
+        </p>
+<pre><code>// src/R003_ImportConponent.jsx   (책의 R003 파일, 확장자는 .jsx)
+import React, { Component } from "react";
+
+class R003_ImportConponet extends Component {   // 클래스형 컴포넌트
+    render() {
+        return (                                  // ( ) 소괄호!
+            &lt;h2&gt;[THIS IS IMPORTED COMPONENT]&lt;/h2&gt;
+        )
+    }
+}
+
+export default R003_ImportConponet;              // 기본(default)으로 내보내기</code></pre>
+<pre><code>// src/App.jsx
+import './App.css'
+import ImportConponet from './R003_ImportConponent'   // ① 가져오기 (파일 경로)
+
+function App() {
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;Hello React 200제&lt;/h1&gt;
+      &lt;p&gt;CSS 적용하기&lt;/p&gt;
+      &lt;ImportConponet&gt;&lt;/ImportConponet&gt;              {/* ② 태그처럼 사용 */}
+    &lt;/div&gt;
+  )
+}</code></pre>
+        <table>
+            <tr><th>포인트</th><th>설명</th></tr>
+            <tr><td><code>export default 이름</code></td><td>이 파일의 대표로 내보낸다. 받는 쪽은 <strong>아무 이름으로나</strong> 받을 수 있다</td></tr>
+            <tr><td><code>import 이름 from './파일'</code></td><td>경로는 <strong>파일 이름과 정확히</strong> 같아야 한다 (<code>.jsx</code> 는 생략 가능)</td></tr>
+            <tr><td>태그 이름</td><td><strong>import 할 때 붙인 이름</strong>과 같아야 한다 (철자 주의)</td></tr>
+            <tr><td>대문자로 시작</td><td>컴포넌트 이름은 <strong>반드시 대문자</strong>. 소문자면 일반 HTML 태그로 착각한다</td></tr>
+            <tr><td><code>&lt;X&gt;&lt;/X&gt;</code> = <code>&lt;X /&gt;</code></td><td>사이에 내용이 없으면 <strong>스스로 닫는 태그</strong>로 줄여 쓸 수 있다 (결과 같음)</td></tr>
+        </table>
+
+        <h3>실습하며 겪은 실수</h3>
+        <table>
+            <tr><th>실수</th><th>원인 / 해결</th></tr>
+            <tr><td><code>return { &lt;h2&gt;...&lt;/h2&gt; }</code> → 에러</td><td><code>{ }</code> 는 <strong>객체</strong>로 읽힌다. JSX 는 <strong>소괄호 <code>( )</code></strong> 로 감싼다</td></tr>
+            <tr><td>컴포넌트 파일만 만들고 화면에 안 나옴</td><td>쓰는 쪽(App.jsx)에서 <strong>import 하고 태그로 써야</strong> 나온다</td></tr>
+            <tr><td><code>&lt;ImpoortConponent&gt;</code> (o 두 개)</td><td>import 한 이름과 달라서 <code>is not defined</code> 에러. 철자 확인</td></tr>
+        </table>
+        <p class="tip">
+            <span class="add">보충</span> import 경로의 <strong>대소문자</strong>도 파일 이름과 맞추자. 예) 파일은 <code>R003_ImportConponent.jsx</code> 인데 <code>'./R003_importConponent'</code> 로 쓰면
+            Windows 에서는 동작하지만, <strong>대소문자를 구분하는 리눅스 서버</strong>(배포 환경)에서는 파일을 못 찾는다.
+        </p>
+
+        <h3>클래스형 vs 함수형 컴포넌트 <span class="add">보충</span></h3>
+        <p>책은 <strong>클래스형</strong>으로 시작하지만, 요즘은 거의 <strong>함수형</strong>을 쓴다. 위 예제를 함수형으로 쓰면 :</p>
+<pre><code>// 함수형 : 함수가 JSX 를 return 하면 끝 (render 메서드, Component 상속 필요 없음)
+function R003_ImportConponet() {
+  return &lt;h2&gt;[THIS IS IMPORTED COMPONENT]&lt;/h2&gt;
+}
+
+export default R003_ImportConponet</code></pre>
+        <table>
+            <tr><th>구분</th><th>클래스형</th><th>함수형</th></tr>
+            <tr><td>모양</td><td><code>class X extends Component { render() { return (...) } }</code></td><td><code>function X() { return (...) }</code></td></tr>
+            <tr><td>상태 관리</td><td><code>this.state</code>, <code>this.setState</code></td><td><code>useState</code> 같은 <strong>Hook</strong></td></tr>
+            <tr><td>지금</td><td>옛 코드·책에서 자주 보임. React 19 에서도 동작</td><td><strong>현재 표준</strong> (Vite 기본 App.jsx 도 함수형)</td></tr>
+        </table>
+
+        <!-- ============================================================ -->
+        <h2>복습 퀴즈 (눌러서 답 확인)</h2>
+        <details>
+            <summary>1. 개발 서버를 켜는 명령과 접속 주소는?</summary>
+            <p><code>react_study</code> 폴더에서 <code>npm run dev</code>, 주소는 <code>http://localhost:5173/</code>. 터미널을 닫으면 서버도 꺼진다.</p>
+        </details>
+        <details>
+            <summary>2. 책의 App.js 와 index.js 는 내 프로젝트에서 어떤 파일인가?</summary>
+            <p>App.js → <code>src/App.jsx</code>, index.js → <code>src/main.jsx</code>. 새 파일은 확장자를 <code>.jsx</code> 로 만든다.</p>
+        </details>
+        <details>
+            <summary>3. JSX 에서 class 대신 쓰는 속성은? JS 값을 넣는 방법은?</summary>
+            <p><code>className</code>. JS 값은 <code>{ }</code> 안에 넣는다.</p>
+        </details>
+        <details>
+            <summary>4. return 할 때 ( ) 대신 { } 를 쓰면?</summary>
+            <p>JavaScript 가 객체를 돌려주는 것으로 읽어서 문법 에러가 난다. JSX 는 소괄호로 감싼다.</p>
+        </details>
+        <details>
+            <summary>5. 컴포넌트를 다른 파일에서 쓰려면?</summary>
+            <p>컴포넌트 파일에서 <code>export default</code> 로 내보내고, 쓰는 파일에서 <code>import 이름 from './파일'</code> 한 뒤 <code>&lt;이름 /&gt;</code> 태그로 쓴다. 이름은 대문자로 시작.</p>
+        </details>
+        <details>
+            <summary>6. <code>&lt;X&gt;&lt;/X&gt;</code> 와 <code>&lt;X /&gt;</code> 의 차이는?</summary>
+            <p>내용이 없을 때는 결과가 같다. 사이에 내용(children)을 넣을 때만 여는/닫는 태그를 쓴다.</p>
+        </details>
+
+        <h2>다음에 배울 것</h2>
+        <ul>
+            <li>props : 컴포넌트에 값 넘기기</li>
+            <li>state : 상태와 화면 갱신 (<code>useState</code>, 클래스형의 <code>this.state</code>)</li>
+            <li>이벤트 처리, 조건부 렌더링, 리스트 렌더링 (<code>map</code>)</li>
+        </ul>
+
+        <p><a href="./index.html">← 대문으로</a></p>
+    </body>
+</html>
