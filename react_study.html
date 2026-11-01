@@ -226,7 +226,7 @@ export default R003_ImportConponet</code></pre>
             <tr><td>1</td><td><code>constructor(props)</code></td><td>생성자. state 선언, props 초기화</td></tr>
             <tr><td>2</td><td><code>static getDerivedStateFromProps(props, state)</code></td><td>props 를 보고 state 조정</td></tr>
             <tr><td>3</td><td><code>render()</code></td><td>화면(JSX) 만들기</td></tr>
-            <tr><td>4</td><td><code>componentDidMount()</code> <span class="add">보충</span></td><td>화면에 붙은 직후 (다음 예제)</td></tr>
+            <tr><td>4</td><td><code>componentDidMount()</code></td><td>화면에 붙은 직후 한 번 (예제 7)</td></tr>
         </table>
         <p class="tip"><strong>코드에 적은 위치는 상관없다.</strong> R006 처럼 <code>getDerivedStateFromProps</code> 를 <code>constructor</code> 보다 위에 적어도 실행 순서는 React 가 정한 대로다.</p>
 
@@ -320,7 +320,94 @@ import LifecycleEx from './R006_LifeCycleEx'
             <code>getDerivedStateFromProps</code> 는 실무에서는 거의 쓰지 않는다. 지금은 순서 이해용.
         </p>
 
-        <h3>4-4. props : 부모가 넘겨주는 값</h3>
+        <h3>4-4. componentDidMount 와 state 합치기 (예제 7)</h3>
+<pre><code>// src/R007_LifeCycleEx.jsx
+class R007_LifecycleEx extends Component {
+    static getDerivedStateFromProps(props, state) {
+        console.log('2. getDerivedStateFromProps Call :' + props.prop_value);
+        return { tmp_state: props.prop_value };   // ← state 에 합쳐 달라는 요청
+    }
+    constructor(props) {
+        super(props);
+        this.state = {};                           // 처음엔 빈 객체
+        console.log('1. constructor Call');
+    }
+    componentDidMount() {
+        console.log('4. componentDidMount Call');
+        console.log('5. tmp_state : ' + this.state.tmp_state);
+    }
+    render() {
+        console.log('3. render Call');
+        return (
+            &lt;h2&gt;[THIS IS CONSTRUCTOR FUNCTION]&lt;/h2&gt;
+        )
+    }
+}</code></pre>
+<pre><code>// 콘솔
+1. constructor Call
+2. getDerivedStateFromProps Call :FromApp.jsx
+3. render Call
+4. componentDidMount Call
+5. tmp_state : FromApp.jsx</code></pre>
+        <ul>
+            <li><code>componentDidMount</code> : render 가 끝나 <strong>화면에 실제로 붙은 직후 한 번</strong> 호출된다</li>
+            <li><span class="add">보충</span> 서버에서 데이터 가져오기, 타이머 시작처럼 <strong>화면이 준비된 뒤 할 일</strong>을 주로 여기에 넣는다</li>
+        </ul>
+
+        <h3>tmp_state 는 어디서 정의됐나?</h3>
+        <p><code>constructor</code> 에서 선언한 적이 없는데 <code>this.state.tmp_state</code> 가 나온다. 정의한 곳은 <strong><code>getDerivedStateFromProps</code> 가 return 한 객체</strong>다.</p>
+        <table>
+            <tr><th>순서</th><th>함수</th><th><code>this.state</code></th></tr>
+            <tr><td>1</td><td><code>constructor</code></td><td><code>{}</code> (빈 객체)</td></tr>
+            <tr><td>2</td><td><code>getDerivedStateFromProps</code></td><td><code>{ tmp_state: 'FromApp.jsx' }</code> 를 return → React 가 state 에 <strong>합침</strong> → <code>{ tmp_state: 'FromApp.jsx' }</code></td></tr>
+            <tr><td>3</td><td><code>render</code></td><td>합쳐진 state 로 화면을 그림</td></tr>
+            <tr><td>4</td><td><code>componentDidMount</code></td><td><code>this.state.tmp_state</code> → <code>'FromApp.jsx'</code></td></tr>
+        </table>
+
+        <h3>return 했을 뿐인데 왜 state 에 합쳐지나? : React 내부 규칙</h3>
+        <ul>
+            <li>보통 JavaScript 에서 <code>return</code> 은 <strong>호출한 쪽에 값을 돌려줄 뿐</strong>이다. 아무도 받지 않으면 버려진다</li>
+            <li>그런데 <code>getDerivedStateFromProps</code> 는 <strong>내가 아니라 React 가 호출</strong>한다. 그러니 return 값도 <strong>React 가 받고</strong>, React 가 그 값을 <code>this.state</code> 에 합친다</li>
+            <li>그 코드는 내 파일이 아니라 <strong>React 안(<code>node_modules</code>)</strong> 에 있어서 안 보일 뿐이다</li>
+        </ul>
+<pre><code>// React 안에서 일어나는 일 (단순화한 흉내)
+const instance = new R007_LifecycleEx(props)                  // 1. constructor → state = {}
+const result = R007_LifecycleEx.getDerivedStateFromProps(props, instance.state)  // 2. React 가 호출하고 받음
+if (result !== null) {
+    instance.state = { ...instance.state, ...result }       //    React 가 합침
+}
+instance.render()                                             // 3. 화면 그리기
+instance.componentDidMount()                                  // 4. 화면에 붙은 뒤</code></pre>
+        <div class="key">
+            <strong>state 에 합쳐지는 것은 React 가 정한 내부 규칙(약속)이다.</strong> JavaScript 문법이 아니다.<br/>
+            · <code>getDerivedStateFromProps</code> 의 return 객체 → state 에 <strong>합친다</strong> (<code>null</code> 이면 그대로)<br/>
+            · <code>render</code> 의 return JSX → 화면에 <strong>그린다</strong><br/>
+            · 나중에 배울 <code>this.setState({ ... })</code> 에 넘긴 객체 → state 에 <strong>합친다</strong>
+        </div>
+        <p class="tip">
+            <span class="add">보충</span> C 의 <code>qsort</code> 와 같은 구조다. 나는 비교 함수 <code>compare</code> 가 결과를 <code>return</code> 하게만 만들고,
+            그 값으로 배열을 정렬하는 코드는 <code>qsort</code> 안에 있다. 이처럼 <strong>라이브러리(프레임워크)가 내 함수를 호출</strong>하는 구조를
+            <strong>제어의 역전</strong>(Inversion of Control) 이라고 한다. JavaScript 노트 10-5 의 콜백 함수와 같은 원리.
+        </p>
+
+        <h3>합치는 규칙 : 속성 이름 기준</h3>
+        <p>내용을 이해해서 합치는 게 아니라 <strong>같은 이름의 속성끼리 덮어쓰기</strong>만 한다 (JavaScript 노트 11-9 의 객체 전개 연산자 <code>{ ...a, ...b }</code> 와 같다).</p>
+<pre><code>기존 state : { count: 1, tmp_state: '옛 값' }
+return 값  : { tmp_state: 'FromApp.jsx' }
+합친 결과  : { count: 1, tmp_state: 'FromApp.jsx' }</code></pre>
+        <table>
+            <tr><th>return 값에</th><th>결과</th></tr>
+            <tr><td>새 이름이 있으면</td><td><strong>추가</strong> (R007 의 <code>tmp_state</code>)</td></tr>
+            <tr><td>같은 이름이 있으면</td><td><strong>덮어씀</strong></td></tr>
+            <tr><td>없는 이름은</td><td>기존 값 <strong>유지</strong></td></tr>
+            <tr><td><code>null</code> 을 return</td><td>아무것도 안 바꿈</td></tr>
+        </table>
+        <p class="tip">
+            JavaScript 객체는 <strong>동적</strong>이라 미리 선언하지 않은 속성도 언제든 생긴다 (C 구조체와 다른 점). <code>constructor</code> 에서 <code>this.state = { tmp_state: '' }</code> 처럼 미리 적어 두면 읽기 좋지만 필수는 아니다.
+            대신 <strong>없는 속성을 읽어도 에러 없이 <code>undefined</code></strong> 가 나오므로, 콘솔에 <code>tmp_state : undefined</code> 가 찍히면 철자부터 확인한다.
+        </p>
+
+        <h3>4-5. props : 부모가 넘겨주는 값</h3>
         <ul>
             <li><strong>props = properties(속성)</strong> 의 준말. HTML 태그에 속성을 붙이듯 <strong>컴포넌트 태그에 붙인 속성들을 모은 객체</strong></li>
             <li><code>&lt;LifecycleEx prop_value="FromApp.jsx" /&gt;</code> → 자식은 <code>props = { prop_value: "FromApp.jsx" }</code> 를 받는다</li>
@@ -335,7 +422,7 @@ import LifecycleEx from './R006_LifeCycleEx'
             <tr><td>피해야 할 속성 이름 <span class="add">보충</span></td><td><code>key</code>, <code>ref</code> (React 가 따로 씀, props 로 안 넘어감), <code>children</code> (태그 사이 내용)</td></tr>
         </table>
 
-        <h3>4-5. 콘솔에 두 번씩 찍히는 이유 : StrictMode <span class="add">보충</span></h3>
+        <h3>4-6. 콘솔에 두 번씩 찍히는 이유 : StrictMode <span class="add">보충</span></h3>
         <ul>
             <li><code>main.jsx</code> 의 <code>&lt;StrictMode&gt;</code> 는 <strong>개발할 때만</strong> 동작하는 검사 모드. <code>constructor</code>, <code>getDerivedStateFromProps</code>, <code>render</code> 를 <strong>일부러 두 번씩</strong> 호출한다</li>
             <li>같은 입력이면 같은 결과가 나와야 하는 함수에 숨은 버그(부수 효과)를 찾기 위해서. 배포용(<code>npm run build</code>)에서는 한 번만 실행된다</li>
@@ -388,10 +475,22 @@ import LifecycleEx from './R006_LifeCycleEx'
             <summary>11. 콘솔에 로그가 두 번씩 찍히는 이유는?</summary>
             <p>main.jsx 의 StrictMode 가 개발 중에 버그를 찾으려고 일부러 두 번 호출하기 때문. 배포용에서는 한 번.</p>
         </details>
+        <details>
+            <summary>12. componentDidMount 는 언제 호출되고 주로 무엇을 넣나?</summary>
+            <p>render 가 끝나 화면에 실제로 붙은 직후 한 번. 서버 데이터 가져오기, 타이머 시작처럼 화면이 준비된 뒤 할 일.</p>
+        </details>
+        <details>
+            <summary>13. R007 에서 constructor 에 없던 tmp_state 가 생긴 이유는?</summary>
+            <p>getDerivedStateFromProps 가 { tmp_state: ... } 를 return 했고, React 가 그 객체를 state 에 합쳤기 때문. JS 객체는 동적이라 미리 선언하지 않아도 속성이 생긴다.</p>
+        </details>
+        <details>
+            <summary>14. return 만 했는데 state 에 합쳐지는 이유는?</summary>
+            <p>그 함수를 호출하는 쪽이 React 이고, return 값을 state 에 합치는 것이 React 의 내부 규칙이기 때문 (제어의 역전, qsort 의 compare 와 같은 구조). 같은 이름은 덮어쓰고 새 이름은 추가, 없는 이름은 유지.</p>
+        </details>
 
         <h2>다음에 배울 것</h2>
         <ul>
-            <li>componentDidMount 등 나머지 생명주기 함수</li>
+            <li>나머지 생명주기 함수 (업데이트 · 언마운트 때 호출되는 것들)</li>
             <li>state : 상태와 화면 갱신 (클래스형의 <code>this.state</code> / <code>setState</code>, 함수형의 <code>useState</code>)</li>
             <li>이벤트 처리, 조건부 렌더링, 리스트 렌더링 (<code>map</code>)</li>
         </ul>
