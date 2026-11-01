@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<!-- React 스터디 2단락 : ES6 문법 (예제 9~10). 교재 "초보자를 위한 리액트 200제" 를 Vite + React 19 로 실습 -->
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>React 2단락 - ES6 문법</title>
+        <link href="./css/react_study.css" rel="stylesheet">
+        <script src="./js/mobile_table.js" defer></script>
+        <script src="./js/mobile_code.js" defer></script>
+    </head>
+    <body>
+        <p><a href="./index.html">← 대문으로</a> | <a href="./react_study.html">React 스터디 목록</a></p>
+        <h1>React 스터디 2단락 : ES6 문법</h1>
+        <p>
+            교재 : <strong>초보자를 위한 리액트 200제</strong> 예제 9~10 (실습은 <strong>Vite + React 19</strong>).<br/>
+            실습 코드 : <a href="https://github.com/tiranoinpop/react_study">github.com/tiranoinpop/react_study</a><br/>
+            <span class="add">보충</span> 표시는 공부 노트에 없던 내용을 보강한 부분이다.
+        </p>
+        <p>
+            ES6(ECMAScript 2015) 는 JavaScript 의 큰 문법 개편이다. React 코드는 ES6 문법을 전제로 쓰여 있어서 먼저 익혀 둔다.
+            (JavaScript 쪽 정리는 <a href="./javascript_study.html">javascript_study.html</a> 에도 있다.)
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>예제 9. ES6 문자열 : 템플릿 리터럴과 문자열 함수</h2>
+        <p>실습 파일 : <code>src/R009_Es6.jsx</code> (App.jsx 에서 <code>import Es6 from './R009_Es6'</code> 후 <code>&lt;Es6 /&gt;</code> 로 사용)</p>
+<pre><code>componentDidMount() {
+    // 기존 JavaScript : + 로 이어 붙이고, 줄바꿈은 \n
+    var jsString1 = '자바스크립트'
+    var jsString2 = '입니다.\n 다음 줄 입니다.'
+    console.log(jsString1 + ' 문자열' + jsString2)
+
+    // ES6 : 백틱(`) 과 ${ }
+    var Es6String1 = 'ES6'
+    var Es6String2 = '입니다.'
+    console.log(`${Es6String1} 문자열 ${Es6String2}!!
+______다음줄 입니다`)
+
+    // ES6 에 추가된 String 함수
+    var LongString = "ES6에 추가된 String 함수들입니다."
+    console.log('startsWith : ' + LongString.startsWith("ES6에 추가"))
+    console.log('endsWith : ' + LongString.endsWith("함수들입니다."))
+    console.log('includes : ' + LongString.includes("추가된 String"))
+}</code></pre>
+<pre><code>// 콘솔
+자바스크립트 문자열입니다.
+ 다음 줄 입니다.
+ES6 문자열 입니다.!!
+______다음줄 입니다
+startsWith : true
+endsWith : true
+includes : true</code></pre>
+
+        <h3>9-1. 템플릿 리터럴 (Template Literal)</h3>
+        <table>
+            <tr><th>구분</th><th>기존 방식</th><th>ES6 방식</th></tr>
+            <tr><td>따옴표</td><td><code>' '</code> 또는 <code>" "</code></td><td><strong>백틱</strong> <code>` `</code> (키보드 1 왼쪽의 `)</td></tr>
+            <tr><td>변수 끼우기</td><td><code>a + ' 문자열' + b</code> (+ 로 이어 붙임)</td><td><code>`${a} 문자열 ${b}`</code></td></tr>
+            <tr><td>줄바꿈</td><td><code>\n</code> 을 써야 함</td><td>코드에서 <strong>엔터를 친 그대로</strong> 줄바꿈이 된다</td></tr>
+        </table>
+        <ul>
+            <li><code>${ }</code> 안에는 변수뿐 아니라 <strong>JS 식</strong>도 넣을 수 있다 : <code>`${a + b}`</code>, <code>`${x > 0 ? '양수' : '음수'}`</code> <span class="add">보충</span></li>
+            <li>백틱 안의 <strong>들여쓰기·공백도 문자열에 그대로 포함</strong>된다. 위 예제의 <code>______</code> 는 줄 시작 위치를 눈에 보이게 하려고 넣은 것 <span class="add">보충</span></li>
+            <li>JSX 의 <code>{ }</code> 와 모양이 비슷하지만 다르다. <code>${ }</code> 는 <strong>백틱 문자열 안</strong>에서만 쓴다 <span class="add">보충</span></li>
+        </ul>
+
+        <h3>9-2. ES6 에 추가된 String 함수</h3>
+        <table>
+            <tr><th>함수</th><th>하는 일</th><th>예제 결과</th></tr>
+            <tr><td><code>startsWith(s)</code></td><td>문자열이 <strong>s 로 시작</strong>하는가</td><td><code>"ES6에 추가"</code> → true</td></tr>
+            <tr><td><code>endsWith(s)</code></td><td>문자열이 <strong>s 로 끝</strong>나는가</td><td><code>"함수들입니다."</code> → true</td></tr>
+            <tr><td><code>includes(s)</code></td><td>문자열 <strong>안에 s 가 있는가</strong> (위치 무관)</td><td><code>"추가된 String"</code> → true</td></tr>
+        </table>
+        <ul>
+            <li>셋 다 <strong>true / false (Boolean)</strong> 를 반환한다</li>
+            <li>대소문자를 구분한다 : <code>"abc".includes("B")</code> → false <span class="add">보충</span></li>
+            <li>예전에는 <code>indexOf(s) !== -1</code> 처럼 위치를 구해서 비교해야 했다. 이름만으로 뜻이 보이는 것이 장점 <span class="add">보충</span></li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <h2>예제 10. 변수 선언 : var, let, const</h2>
+        <p>실습 파일 : <code>src/R010_Variable.jsx</code></p>
+<pre><code>componentDidMount() {
+    var varName = 'react';
+    console.log('varName : ' + varName)
+    var varName = 200;      // 경고는 뜨나 재선언 가능
+    console.log('varName : ' + varName)
+
+    let letName = 'react';
+    console.log('letName : ' + letName)
+    // let letName = 200;   // 재선언 불가
+    letName = 200;          // 재할당 가능
+    console.log('letName : ' + letName)
+
+    const constName = 'react';
+    console.log('constName : ' + constName)
+    // const constName = 200;  // 재선언 불가
+    // constName = 200;        // 재할당 불가
+}</code></pre>
+<pre><code>// 콘솔
+varName : react
+varName : 200
+letName : react
+letName : 200
+constName : react</code></pre>
+        <table>
+            <tr><th>구분</th><th>var</th><th>let</th><th>const</th></tr>
+            <tr><td>재선언 (같은 이름으로 또 선언)</td><td>가능 (경고만)</td><td><strong>불가</strong></td><td><strong>불가</strong></td></tr>
+            <tr><td>재할당 (값 바꾸기)</td><td>가능</td><td>가능</td><td><strong>불가</strong></td></tr>
+            <tr><td>도입 시기</td><td>예전부터</td><td>ES6</td><td>ES6</td></tr>
+        </table>
+        <div class="key">
+            · <strong>기본은 <code>const</code></strong>, 값을 바꿔야 할 때만 <code>let</code>, <code>var</code> 는 쓰지 않는 것이 요즘 관례 <span class="add">보충</span><br/>
+            · <code>var</code> 는 실수로 같은 이름을 또 선언해도 조용히 덮어써서 버그를 찾기 어렵다 → <code>let</code>/<code>const</code> 는 <strong>에러로 막아준다</strong>
+        </div>
+        <ul>
+            <li>예제의 <code>// 경고는 뜨나 재선언 가능</code> : VS Code(ESLint) 에 경고 표시가 뜨지만 실행은 된다. 그래서 <code>varName</code> 이 <code>react</code> → <code>200</code> 으로 찍힌다</li>
+            <li>주석으로 막아 둔 두 줄은 주석을 풀면 <strong>에러가 난다</strong> (재선언 불가 / 재할당 불가). 직접 풀어서 에러 메시지를 확인해 보면 좋다</li>
+            <li><code>componentDidMount</code> 안에서 실행했으므로 결과는 화면이 아니라 <strong>브라우저 콘솔(F12)</strong> 에 나온다. 화면에는 <code>[THIS IS VARIABLE]</code> 만 보인다</li>
+        </ul>
+        <table>
+            <tr><th>추가 개념 <span class="add">보충</span></th><th>설명</th></tr>
+            <tr><td>유효 범위(scope)</td><td><code>var</code> 는 <strong>함수</strong> 단위, <code>let</code>/<code>const</code> 는 <strong>블록 { }</strong> 단위. <code>if</code>, <code>for</code> 안에서 선언하면 그 밖에서는 안 보인다</td></tr>
+            <tr><td>const 와 객체</td><td><code>const obj = { a: 1 }</code> 에 <code>obj.a = 2</code> 는 <strong>가능</strong>. 막는 것은 <code>obj = ...</code> 처럼 변수 자체를 다른 값으로 바꾸는 것뿐</td></tr>
+            <tr><td>호이스팅</td><td><code>var</code> 는 선언 전에 써도 <code>undefined</code> 로 나오지만, <code>let</code>/<code>const</code> 는 선언 전에 쓰면 에러 (TDZ)</td></tr>
+        </table>
+        <p class="tip">
+            <span class="add">보충</span> 이 예제를 만들 때 <code>import React, { component }</code> 처럼 <code>Component</code> 를 소문자로 쓰면 화면이 통째로 비어 보인다.
+            <code>extends Component</code> 에서 에러가 나면 React 가 <code>App</code> 전체를 그리지 못하기 때문이다.
+            화면이 하얗게 나오면 먼저 <strong>콘솔(F12)</strong> 의 빨간 에러를 확인한다.
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>복습 퀴즈 (눌러서 답 확인)</h2>
+        <details>
+            <summary>1. 템플릿 리터럴은 어떤 따옴표로 쓰고, 변수는 어떻게 끼우나?</summary>
+            <p>백틱(<code>`</code>) 으로 감싸고 <code>${변수}</code> 로 끼운다. 줄바꿈도 엔터 그대로 된다.</p>
+        </details>
+        <details>
+            <summary>2. startsWith, endsWith, includes 의 차이는?</summary>
+            <p>각각 문자열이 ~로 시작하는지 / ~로 끝나는지 / ~를 포함하는지를 true/false 로 알려준다.</p>
+        </details>
+        <details>
+            <summary>3. var, let, const 의 재선언·재할당 가능 여부는?</summary>
+            <p>var : 둘 다 가능. let : 재선언 불가, 재할당 가능. const : 둘 다 불가.</p>
+        </details>
+        <details>
+            <summary>4. 요즘은 어떤 순서로 선택하나?</summary>
+            <p>기본은 const, 값이 바뀌어야 하면 let, var 는 쓰지 않는다.</p>
+        </details>
+        <details>
+            <summary>5. const 로 선언한 객체의 속성은 바꿀 수 있나?</summary>
+            <p>바꿀 수 있다. 변수에 다른 값을 다시 대입하는 것만 막힌다.</p>
+        </details>
+        <details>
+            <summary>6. 화면이 하얗게 나올 때 가장 먼저 볼 곳은?</summary>
+            <p>브라우저 콘솔(F12)의 에러 메시지. 예: <code>Component</code> 를 <code>component</code> 로 잘못 import 해도 화면 전체가 비어 보인다.</p>
+        </details>
+
+        <h2>다음에 배울 것</h2>
+        <ul>
+            <li>예제 11 : 전개 연산자 (Spread Operator) — 실습 파일 <code>R011_SpreadOperator.jsx</code> 작성 중</li>
+            <li>그 밖의 ES6 문법 : 화살표 함수, 구조 분해 할당, 클래스 등</li>
+        </ul>
+
+        <p><a href="./index.html">← 대문으로</a> | <a href="./react_study.html">React 스터디 목록</a></p>
+    </body>
+</html>
