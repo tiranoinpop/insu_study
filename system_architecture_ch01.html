@@ -12,7 +12,7 @@
     </head>
     <body>
         <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker></defs></svg>
-        <p><a href="./index.html">← 대문으로</a></p>
+        <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch02.html">2장 →</a></p>
         <h1>1장. 사용자 수에 따른 규모 확장성</h1>
         <p>
             대규모 시스템 설계 기초.<br/>
@@ -238,7 +238,7 @@
         <h3>샤딩이 만드는 새 문제</h3>
         <table>
             <tr><th>문제</th><th>설명</th></tr>
-            <tr><td>재샤딩</td><td>한 샤드가 가득 차거나 데이터가 고르지 않게 쌓이면 샤딩 키를 바꿔 다시 나눠야 한다 (→ <strong>안정 해시</strong>, 5장)</td></tr>
+            <tr><td>재샤딩</td><td>한 샤드가 가득 차거나 데이터가 고르지 않게 쌓이면 샤딩 키를 바꿔 다시 나눠야 한다 (→ <strong>안정 해시</strong>, 3장)</td></tr>
             <tr><td>유명인사 (핫스팟 키)</td><td>특정 샤드에 질의가 몰린다. 유명인 계정마다 샤드를 따로 주거나 더 잘게 쪼갠다</td></tr>
             <tr><td>조인과 비정규화</td><td>여러 샤드에 걸친 조인이 어렵다 → DB 를 <strong>비정규화</strong>해서 한 테이블에서 질의 가능하게 한다</td></tr>
         </table>
@@ -286,13 +286,13 @@
         <!-- ============================================================ -->
         <h2>더 공부할 거리 <span class="add">보충</span></h2>
         <ul>
-            <li>안정 해시 (consistent hashing) → 책 5장</li>
+            <li>안정 해시 (consistent hashing) → 책 3장</li>
             <li>CAP 정리 (일관성 / 가용성 / 분할 내성 중 2개만)</li>
             <li>DB 인덱스와 쿼리 최적화, 커넥션 풀</li>
             <li>로드 밸런싱 알고리즘 (라운드 로빈, 최소 연결, IP 해시)</li>
             <li>오토스케일링, 컨테이너 (Docker, Kubernetes)</li>
         </ul>
 
-        <p><a href="./index.html">← 대문으로</a></p>
+        <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch02.html">2장 →</a></p>
     </body>
 </html>

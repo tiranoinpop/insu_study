@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- 시스템 아키텍처 노트 5장 : 안정 해시 설계 (원본 : insu_study/system_architecture/ch05_*.md) -->
+<!-- 시스템 아키텍처 노트 5장 : 분산 시스템에서 유일 ID 생성기 설계 (원본 : insu_study/system_architecture/ch05_*.md) -->
 <html lang="ko">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>시스템 설계 5장 - 안정 해시</title>
+        <title>시스템 설계 5장 - 유일 ID 생성기</title>
         <link href="./css/system_architecture.css" rel="stylesheet">
         <script src="./js/mobile_table.js" defer></script>
         <script src="./js/mobile_code.js" defer></script>
@@ -12,188 +12,160 @@
     <body>
         <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker></defs></svg>
         <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch04.html">← 4장</a> | <a href="./system_architecture_ch06.html">6장 →</a></p>
-        <h1>5장. 안정 해시 설계</h1>
+        <h1>5장. 분산 시스템에서 유일 ID 생성기 설계</h1>
         <p>
-            Consistent Hashing. 1장 샤딩의 "재샤딩" 문제를 푸는 기술이다.<br/>
+            DB 가 여러 곳인데 <strong>통틀어 유일한 ID</strong> 를 만들어야 한다. 방법은 여러 가지가 있다.<br/>
             <span class="add">보충</span> 표시는 공부 노트에 없던 내용을 보강한 부분이다.
         </p>
 
         <!-- ============================================================ -->
-        <h2>1. 해시 키 재배치 문제</h2>
-        <figure class="diagram"><svg viewBox="0 0 360 165" role="img" aria-label="나머지 연산 해시의 재배치">
-            <text x="20" y="12" class="sm">키 번호</text>
-            <rect class="gray" x="20" y="16" width="36" height="26"/><text x="38" y="34" text-anchor="middle">0</text>
-            <rect class="gray" x="60" y="16" width="36" height="26"/><text x="78" y="34" text-anchor="middle">1</text>
-            <rect class="gray" x="100" y="16" width="36" height="26"/><text x="118" y="34" text-anchor="middle">2</text>
-            <rect class="gray" x="140" y="16" width="36" height="26"/><text x="158" y="34" text-anchor="middle">3</text>
-            <rect class="gray" x="180" y="16" width="36" height="26"/><text x="198" y="34" text-anchor="middle">4</text>
-            <rect class="gray" x="220" y="16" width="36" height="26"/><text x="238" y="34" text-anchor="middle">5</text>
-            <rect class="gray" x="260" y="16" width="36" height="26"/><text x="278" y="34" text-anchor="middle">6</text>
-            <rect class="gray" x="300" y="16" width="36" height="26"/><text x="318" y="34" text-anchor="middle">7</text>
-            <text x="20" y="62" class="sm">서버 4대 : 키 % 4 = 서버 번호</text>
-            <rect class="box" x="20" y="66" width="36" height="26"/><text x="38" y="84" text-anchor="middle">0</text>
-            <rect class="box" x="60" y="66" width="36" height="26"/><text x="78" y="84" text-anchor="middle">1</text>
-            <rect class="box" x="100" y="66" width="36" height="26"/><text x="118" y="84" text-anchor="middle">2</text>
-            <rect class="box" x="140" y="66" width="36" height="26"/><text x="158" y="84" text-anchor="middle">3</text>
-            <rect class="box" x="180" y="66" width="36" height="26"/><text x="198" y="84" text-anchor="middle">0</text>
-            <rect class="box" x="220" y="66" width="36" height="26"/><text x="238" y="84" text-anchor="middle">1</text>
-            <rect class="box" x="260" y="66" width="36" height="26"/><text x="278" y="84" text-anchor="middle">2</text>
-            <rect class="box" x="300" y="66" width="36" height="26"/><text x="318" y="84" text-anchor="middle">3</text>
-            <text x="20" y="112" class="sm">1대 장애 → 3대 : 키 % 3 = 서버 번호</text>
-            <rect class="green" x="20" y="116" width="36" height="26"/><text x="38" y="134" text-anchor="middle">0</text>
-            <rect class="green" x="60" y="116" width="36" height="26"/><text x="78" y="134" text-anchor="middle">1</text>
-            <rect class="green" x="100" y="116" width="36" height="26"/><text x="118" y="134" text-anchor="middle">2</text>
-            <rect class="red" x="140" y="116" width="36" height="26"/><text x="158" y="134" text-anchor="middle">0</text>
-            <rect class="red" x="180" y="116" width="36" height="26"/><text x="198" y="134" text-anchor="middle">1</text>
-            <rect class="red" x="220" y="116" width="36" height="26"/><text x="238" y="134" text-anchor="middle">2</text>
-            <rect class="red" x="260" y="116" width="36" height="26"/><text x="278" y="134" text-anchor="middle">0</text>
-            <rect class="red" x="300" y="116" width="36" height="26"/><text x="318" y="134" text-anchor="middle">1</text>
-            <text x="180" y="159" text-anchor="middle" style="fill:#d33" class="sm">빨간 칸 = 서버가 바뀐 키 (8개 중 5개)</text>
-        </svg><figcaption>서버 수(N)가 바뀌면 대부분의 키가 다른 서버로 이동 → 캐시 미스 폭증</figcaption></figure>
+        <h2>1. 문제</h2>
         <ul>
-            <li>수평 확장에는 요청/데이터를 서버에 <strong>균등하게 분배</strong>해야 한다</li>
-            <li><span class="add">보충</span> 기본 방식 (나머지 연산 해시) :</li>
+            <li>DB 가 한 대면 <code>auto_increment</code> 로 충분하지만, <strong>여러 대</strong>면 서버마다 번호를 따로 매겨 <strong>중복</strong>이 생긴다</li>
+            <li><span class="add">보충</span> 책의 요구사항 : ID 는 <strong>유일</strong> / <strong>숫자로만</strong> / <strong>64비트</strong> 이내 / 발급 시각에 따라 <strong>정렬 가능</strong> / <strong>초당 10,000개</strong> 생성</li>
         </ul>
-        <pre><code>serverIndex = hash(key) % N    // N = 서버 대수</code></pre>
-        <ul>
-            <li>서버 수가 고정이면 잘 동작하지만, <strong>서버가 추가/삭제되면 N 이 바뀌어 거의 모든 키가 재배치</strong>된다</li>
-            <li><span class="add">보충</span> 예) 서버 4대 중 1대 장애 → <code>% 3</code> 으로 바뀜 → 대부분 엉뚱한 서버로 접속 → <strong>캐시 미스 폭증</strong> → 대규모 장애</li>
-        </ul>
-        <p class="tip">그래서 <strong>안정 해시</strong>를 사용한다.</p>
 
         <!-- ============================================================ -->
-        <h2>2. 안정 해시란</h2>
-        <div class="key">
-            해시 테이블 크기가 조정될 때 평균적으로 <strong>오직 k/n 개의 키만</strong> 재배치하는 해시 기술<br/>
-            (k = 키의 개수, n = 슬롯(서버)의 개수)
-        </div>
+        <h2>2. 방법 4가지</h2>
 
-        <!-- ============================================================ -->
-        <h2>3. 해시 링 (hash ring)</h2>
-        <figure class="diagram"><svg viewBox="0 0 360 225" role="img" aria-label="해시 링">
-            <circle class="ring" cx="180" cy="112" r="75"/>
-            <text x="180" y="108" text-anchor="middle" class="sm">해시 링</text><text x="180" y="124" text-anchor="middle" class="sm">시계 방향 →</text>
-            <circle class="blue" cx="180" cy="37" r="15"/><text x="180" y="42" text-anchor="middle" class="w sm">s0</text>
-            <circle class="blue" cx="255" cy="112" r="15"/><text x="255" y="117" text-anchor="middle" class="w sm">s1</text>
-            <circle class="blue" cx="180" cy="187" r="15"/><text x="180" y="192" text-anchor="middle" class="w sm">s2</text>
-            <circle class="blue" cx="105" cy="112" r="15"/><text x="105" y="117" text-anchor="middle" class="w sm">s3</text>
-            <circle class="yellow" cx="233" cy="59" r="8"/><text x="250" y="52" class="sm">k0</text>
-            <path d="M233,59 A75,75 0 0 1 248,92" stroke="#d33" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
-            <circle class="yellow" cx="127" cy="165" r="8"/><text x="100" y="178" class="sm">k1</text>
-            <path d="M127,165 A75,75 0 0 1 108,130" stroke="#d33" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
-            <text x="8" y="30" class="sm">k0 → s1</text><text x="8" y="46" class="sm">k1 → s3</text>
-            <text x="8" y="68" class="sm">(시계 방향으로</text><text x="8" y="84" class="sm">처음 만나는 서버)</text>
-        </svg><figcaption>키 위치에서 시계 방향으로 가다 처음 만나는 서버에 저장</figcaption></figure>
+        <h3>2-1. 다중 마스터 복제 (multi-master replication)</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 160" role="img" aria-label="다중 마스터 복제">
+            <rect class="box" x="20" y="12" width="150" height="38" rx="6"/><text x="95" y="28" text-anchor="middle" class="b">DB 1</text><text x="95" y="43" text-anchor="middle" class="sm">auto_increment +2</text>
+            <rect class="box" x="190" y="12" width="150" height="38" rx="6"/><text x="265" y="28" text-anchor="middle" class="b">DB 2</text><text x="265" y="43" text-anchor="middle" class="sm">auto_increment +2</text>
+            <rect class="yellow" x="22" y="66" width="30" height="26"/><text x="37" y="84" text-anchor="middle">1</text>
+            <rect class="yellow" x="62" y="66" width="30" height="26"/><text x="77" y="84" text-anchor="middle">3</text>
+            <rect class="yellow" x="102" y="66" width="30" height="26"/><text x="117" y="84" text-anchor="middle">5</text>
+            <rect class="yellow" x="142" y="66" width="30" height="26"/><text x="157" y="84" text-anchor="middle">7</text>
+            <rect class="green" x="192" y="66" width="30" height="26"/><text x="207" y="84" text-anchor="middle">2</text>
+            <rect class="green" x="232" y="66" width="30" height="26"/><text x="247" y="84" text-anchor="middle">4</text>
+            <rect class="green" x="272" y="66" width="30" height="26"/><text x="287" y="84" text-anchor="middle">6</text>
+            <rect class="green" x="312" y="66" width="30" height="26"/><text x="327" y="84" text-anchor="middle">8</text>
+            <text x="180" y="116" text-anchor="middle" class="sm">k = DB 서버 수 = 2 → 각자 1 이 아니라 2 씩 증가</text>
+            <text x="180" y="138" text-anchor="middle" style="fill:#d33" class="sm">서버를 추가/삭제하면 k 를 바꿔야 해서 어렵다</text>
+        </svg><figcaption>서버가 2대면 한쪽은 홀수, 다른 쪽은 짝수만 발급</figcaption></figure>
         <ul>
-            <li><strong>해시 공간</strong> : 해시 함수의 출력 범위. SHA-1 이면 0 ~ 2<sup>160</sup> - 1</li>
-            <li>이 공간의 <strong>양쪽 끝을 구부려 접어</strong> 원형(링)으로 만든다</li>
-            <li>서버와 키를 <strong>같은 균등 분포 해시 함수</strong>로 링 위에 배치 (나머지 연산 없음)</li>
-            <li>키가 저장될 서버 : 키 위치에서 <strong>시계 방향</strong>으로 탐색하다 <strong>처음 만나는 서버</strong></li>
+            <li>DB 의 <code>auto_increment</code> 를 활용. 다음 ID 를 구할 때 <strong>1 이 아니라 k 만큼</strong> 증가. <strong>k = 사용 중인 DB 서버 수</strong></li>
         </ul>
-        <pre><code>링 위 배치 (시계 방향)
-s0 → k0 → s1 → s2 → s3 → (다시 s0)
-
-k0 는 시계 방향 첫 서버인 s1 에 저장</code></pre>
         <table>
-            <tr><th>상황</th><th>일어나는 일</th></tr>
-            <tr><td>서버 추가</td><td>새 서버와 바로 앞(반시계) 서버 사이 구간의 키만 새 서버로 이동 → <strong>일부 키만 재배치</strong></td></tr>
-            <tr><td>서버 제거</td><td>제거된 서버의 키만 시계 방향 다음 서버로 이동 → <strong>일부 키만 재배치</strong></td></tr>
+            <tr><th>중대한 단점</th></tr>
+            <tr><td><strong>여러 데이터 센터</strong>에 걸쳐 규모를 늘리기 어렵다</td></tr>
+            <tr><td>ID 유일성은 보장되나 <strong>값이 시간 흐름에 맞춰 커지도록 보장되지 않는다</strong></td></tr>
+            <tr><td><strong>서버 추가/삭제</strong> 시에도 잘 동작하게 하기 어렵다</td></tr>
         </table>
 
-        <!-- ============================================================ -->
-        <figure class="diagram"><svg viewBox="0 0 360 225" role="img" aria-label="서버 추가">
-            <circle class="ring" cx="180" cy="112" r="75"/>
-            <path d="M255,112 A75,75 0 0 1 233,165" stroke="#1e7a3c" stroke-width="6" fill="none"/>
-            <circle class="blue" cx="180" cy="37" r="15"/><text x="180" y="42" text-anchor="middle" class="w sm">s0</text>
-            <circle class="blue" cx="255" cy="112" r="15"/><text x="255" y="117" text-anchor="middle" class="w sm">s1</text>
-            <circle class="blue" cx="180" cy="187" r="15"/><text x="180" y="192" text-anchor="middle" class="w sm">s2</text>
-            <circle class="blue" cx="105" cy="112" r="15"/><text x="105" y="117" text-anchor="middle" class="w sm">s3</text>
-            <circle cx="233" cy="165" r="15" fill="#1e7a3c"/><text x="233" y="170" text-anchor="middle" class="w sm">s4</text>
-            <circle class="yellow" cx="249" cy="141" r="7"/><text x="262" y="148" class="sm">k2</text>
-            <text x="20" y="40" class="sm">새 서버 s4 추가</text>
-            <text x="20" y="58" class="sm">초록 구간의 키(k2)만</text>
-            <text x="20" y="74" class="sm">s2 → s4 로 이동</text>
-            <text x="20" y="92" class="sm">나머지는 그대로</text>
-        </svg><figcaption>서버를 추가해도 바로 앞 구간의 키만 재배치된다</figcaption></figure>
-        <h2>4. 기본 구현의 두 가지 문제</h2>
+        <h3>2-2. UUID</h3>
+        <ul>
+            <li>유일성이 보장되는 ID 를 만드는 간단한 방법. 컴퓨터 시스템에 저장되는 정보를 유일하게 식별하기 위한 <strong>128비트</strong> 수</li>
+            <li>예) <code>09c93e62-50b4-468d-bf8a-c07e1040bfb2</code></li>
+            <li>충돌 가능성이 <strong>지극히 낮다</strong> : 중복이 하나 생길 확률을 50% 로 올리려면 <strong>초당 10억 개를 100년간</strong> 만들어야 한다</li>
+        </ul>
         <table>
-            <tr><th>문제</th><th>설명</th></tr>
-            <tr><td>파티션 크기 불균형</td><td>서버 간 구간(파티션) 크기를 균등하게 유지하기 어렵다 (어떤 서버는 구간이 아주 넓고 어떤 서버는 좁음)</td></tr>
-            <tr><td>키 분포 불균형</td><td>링 위의 키가 균등하게 분포하지 않을 수 있다 (일부 서버에 몰림)</td></tr>
+            <tr><th>장점</th><th>단점</th></tr>
+            <tr><td>서버 사이 <strong>조율이 필요 없다</strong> (서버마다 독립 생성)</td><td><strong>시간순 정렬 불가</strong></td></tr>
+            <tr><td><strong>규모 확장이 쉽다</strong></td><td><strong>128비트로 길다</strong> (요구는 64비트)</td></tr>
+            <tr><td>구현이 간단</td><td>숫자 아닌 값(영문, 하이픈)이 포함</td></tr>
         </table>
+        <p class="tip"><span class="add">보충</span> 최신 <strong>UUIDv7</strong>, <strong>ULID</strong> 는 앞부분에 시각을 넣어 <strong>시간순 정렬</strong>이 가능하다.</p>
 
-        <!-- ============================================================ -->
-        <h2>5. 가상 노드 (virtual node)</h2>
-        <figure class="diagram"><svg viewBox="0 0 360 225" role="img" aria-label="가상 노드">
-            <circle class="ring" cx="180" cy="112" r="75"/>
-            <text x="180" y="108" text-anchor="middle" class="sm">서버 2대</text><text x="180" y="124" text-anchor="middle" class="sm">= 가상 노드 6개</text>
-            <circle class="blue" cx="180" cy="37" r="16"/><text x="180" y="41" text-anchor="middle" class="w sm">s0·0</text>
-            <circle cx="245" cy="74" r="16" fill="#1e7a3c"/><text x="245" y="78" text-anchor="middle" class="w sm">s1·0</text>
-            <circle class="blue" cx="245" cy="150" r="16"/><text x="245" y="154" text-anchor="middle" class="w sm">s0·1</text>
-            <circle cx="180" cy="187" r="16" fill="#1e7a3c"/><text x="180" y="191" text-anchor="middle" class="w sm">s1·1</text>
-            <circle class="blue" cx="115" cy="150" r="16"/><text x="115" y="154" text-anchor="middle" class="w sm">s0·2</text>
-            <circle cx="115" cy="74" r="16" fill="#1e7a3c"/><text x="115" y="78" text-anchor="middle" class="w sm">s1·2</text>
-            <rect class="blue" x="280" y="40" width="12" height="12"/><text x="298" y="51" class="sm">서버 s0</text>
-            <rect x="280" y="62" width="12" height="12" fill="#1e7a3c"/><text x="298" y="73" class="sm">서버 s1</text>
-        </svg><figcaption>서버 하나를 링 위 여러 곳에 흩뿌려 놓으면 구간 크기가 고르게 섞인다 (가상 노드 ↑ → 분포 균등)</figcaption></figure>
+        <h3>2-3. 티켓 서버 (ticket server)</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 160" role="img" aria-label="티켓 서버">
+            <rect class="gray" x="10" y="14" width="100" height="30" rx="6"/><text x="60" y="34" text-anchor="middle">웹 서버 1</text>
+            <rect class="gray" x="10" y="60" width="100" height="30" rx="6"/><text x="60" y="80" text-anchor="middle">웹 서버 2</text>
+            <rect class="gray" x="10" y="106" width="100" height="30" rx="6"/><text x="60" y="126" text-anchor="middle">웹 서버 3</text>
+            <rect class="red" x="230" y="48" width="120" height="56" rx="6"/><text x="290" y="70" text-anchor="middle" class="b">티켓 서버</text><text x="290" y="88" text-anchor="middle" class="sm">auto_increment 1대</text>
+            <path class="line" d="M110,29 L230,62"/><path class="line" d="M110,75 H230"/><path class="line" d="M110,121 L230,90"/>
+            <text x="290" y="128" text-anchor="middle" style="fill:#d33" class="b">SPOF</text>
+            <text x="290" y="144" text-anchor="middle" class="sm">죽으면 전체가 멈춤</text>
+        </svg><figcaption>모든 서버가 하나의 티켓 서버에서 번호를 받는다</figcaption></figure>
         <ul>
-            <li>실제 서버 하나를 링 위에 <strong>여러 개의 가상 노드</strong>로 표현한다</li>
-            <li>서버마다 여러 파티션을 담당 (예: s0 → s0_0, s0_1, s0_2 …)</li>
-            <li>키는 시계 방향으로 만나는 첫 가상 노드가 가리키는 <strong>실제 서버</strong>에 저장</li>
-            <li>가상 노드 수를 <strong>늘릴수록 키 분포가 더 균등</strong>해진다 (표준 편차 감소)</li>
-            <li><span class="add">보충</span> 연구 결과 가상 노드 100~200개면 표준 편차가 평균의 약 5~10%</li>
-            <li><span class="add">보충</span> 트레이드오프 : 가상 노드 데이터를 저장할 공간이 더 필요 → 요구사항에 맞게 튜닝</li>
+            <li>Flickr 가 사용. 티켓 서버를 <strong>따로 두어 중앙집중형으로 하나만</strong> 사용 (<code>auto_increment</code> 를 쓰는 DB 한 대)</li>
+            <li>👍 <strong>숫자로만</strong> 된 유일 ID 를 쉽게 만들 수 있고, 구현이 쉽다. <strong>중소 규모 애플리케이션</strong>에 적합</li>
+            <li>👎 티켓 서버가 <strong>SPOF</strong>. 장애가 나면 <strong>모든 시스템이 영향</strong>을 받는다</li>
+            <li><span class="add">보충</span> 티켓 서버를 여러 대로 늘리면 <strong>서버 간 데이터 동기화</strong> 문제가 생긴다</li>
+        </ul>
+
+        <h3>2-4. 트위터 스노우플레이크 (snowflake) 기법</h3>
+        <figure class="diagram"><svg viewBox="0 0 360 160" role="img" aria-label="스노우플레이크 64비트 구조">
+            <rect class="gray" x="5" y="22" width="36" height="46"/><text x="23" y="40" text-anchor="middle" class="sm">부호</text><text x="23" y="58" text-anchor="middle" class="b">1</text>
+            <rect class="box" x="45" y="22" width="130" height="46"/><text x="110" y="40" text-anchor="middle" class="sm">타임스탬프</text><text x="110" y="58" text-anchor="middle" class="b">41 bit</text>
+            <rect class="green" x="179" y="22" width="52" height="46"/><text x="205" y="40" text-anchor="middle" class="sm">센터 ID</text><text x="205" y="58" text-anchor="middle" class="b">5</text>
+            <rect class="green" x="235" y="22" width="52" height="46"/><text x="261" y="40" text-anchor="middle" class="sm">서버 ID</text><text x="261" y="58" text-anchor="middle" class="b">5</text>
+            <rect class="yellow" x="291" y="22" width="64" height="46"/><text x="323" y="40" text-anchor="middle" class="sm">일련번호</text><text x="323" y="58" text-anchor="middle" class="b">12 bit</text>
+            <text x="23" y="90" text-anchor="middle" class="sm">항상 0</text>
+            <text x="110" y="90" text-anchor="middle" class="sm">경과한 ms</text>
+            <text x="205" y="90" text-anchor="middle" class="sm">32곳</text>
+            <text x="261" y="90" text-anchor="middle" class="sm">32대</text>
+            <text x="323" y="90" text-anchor="middle" class="sm">ms당 4096개</text>
+            <text x="180" y="124" text-anchor="middle" class="b">합계 64비트</text>
+            <text x="180" y="144" text-anchor="middle" class="sm">앞쪽이 시각이라 ID 순서 = 시간 순서</text>
+        </svg><figcaption>스노우플레이크의 64비트 구조 (1 + 41 + 5 + 5 + 12)</figcaption></figure>
+        <ul>
+            <li>생성할 ID 를 <strong>여러 구획으로 나눠서</strong> 만든다 (분할 정복)</li>
+        </ul>
+        <table>
+            <tr><th>구획</th><th>크기</th><th>설명</th></tr>
+            <tr><td>사인 비트</td><td>1 비트</td><td>항상 0. 나중을 위해 유보 (음수/양수 구분)</td></tr>
+            <tr><td>타임스탬프</td><td>41 비트</td><td>기원 시각(epoch) 이후 <strong>경과한 밀리초(ms)</strong></td></tr>
+            <tr><td>데이터센터 ID</td><td>5 비트</td><td>2<sup>5</sup> = <strong>32</strong> 개 데이터센터</td></tr>
+            <tr><td>서버 ID</td><td>5 비트</td><td>센터당 2<sup>5</sup> = <strong>32</strong> 대</td></tr>
+            <tr><td>일련번호</td><td>12 비트</td><td>ID 를 만들 때마다 +1. <strong>1ms 가 지나면 0 으로 리셋</strong> → ms 당 2<sup>12</sup> = <strong>4096</strong> 개</td></tr>
+        </table>
+        <ul>
+            <li><span class="add">보충</span> 타임스탬프 41비트 = 2<sup>41</sup> ms ≈ <strong>약 69년</strong>. 기원 시각은 보통 서비스 시작 시점 (트위터는 2010-11-04)</li>
+            <li><span class="add">보충</span> 조립 : <code>(타임스탬프 &lt;&lt; 22) | (센터 &lt;&lt; 17) | (서버 &lt;&lt; 12) | 일련번호</code></li>
+            <li><strong>센터 ID 와 서버 ID</strong> 는 서버 시작 시 정해져 운영 중에는 바뀌지 않는다. 타임스탬프는 시간이 흐르며 커지고, 일련번호는 <strong>같은 ms 안에서만</strong> 증가한다</li>
+            <li>👍 시간순 정렬, 64비트, 서버 간 조율 불필요, 대량 생성 가능</li>
         </ul>
 
         <!-- ============================================================ -->
-        <h2>6. 안정 해시의 이점</h2>
-        <ol>
-            <li>서버 추가/삭제 시 <strong>재배치되는 키의 수가 최소화</strong></li>
-            <li>데이터가 균등하게 분포 → <strong>수평적 규모 확장</strong>이 쉽다</li>
-            <li><strong>핫스팟 키 문제</strong>를 줄인다</li>
-        </ol>
-
-        <h2>7. 실제 사용처 <span class="add">보충</span></h2>
+        <h2>3. 설계 시 더 고려할 것 <span class="add">보충</span></h2>
         <ul>
-            <li>Amazon DynamoDB 의 파티셔닝</li>
-            <li>Apache Cassandra 의 데이터 파티셔닝</li>
-            <li>Discord 채팅 애플리케이션</li>
-            <li>Akamai CDN</li>
-            <li>Google Maglev 네트워크 로드 밸런서</li>
+            <li><strong>시계 동기화</strong> : 서버마다 시각이 다르면 충돌 가능 → <strong>NTP</strong> 같은 네트워크 시간 프로토콜</li>
+            <li><strong>구획 길이 튜닝</strong> : 동시성이 낮고 오래 쓰는 서비스면 일련번호를 줄이고 타임스탬프를 늘리는 식</li>
+            <li><strong>고가용성</strong> : ID 생성기는 필수 시스템이라 아주 높은 가용성이 필요</li>
         </ul>
+
+        <h2>4. 한눈에 비교 <span class="add">보충</span></h2>
+        <table>
+            <tr><th>방법</th><th>숫자만</th><th>64비트</th><th>시간순</th><th>약점</th></tr>
+            <tr><td>다중 마스터</td><td>O</td><td>O</td><td>X</td><td>확장, 서버 추가/삭제</td></tr>
+            <tr><td>UUID</td><td>X</td><td>X (128)</td><td>X</td><td>길고 정렬 불가</td></tr>
+            <tr><td>티켓 서버</td><td>O</td><td>O</td><td>대체로 O</td><td>SPOF</td></tr>
+            <tr><td>스노우플레이크</td><td>O</td><td>O</td><td>O</td><td>시계 동기화</td></tr>
+        </table>
 
         <!-- ============================================================ -->
         <h2>복습 퀴즈 (눌러서 답 확인)</h2>
         <details>
-            <summary>1. hash(key) % N 방식에서 서버가 하나 줄면?</summary>
-            <p>N 이 바뀌어 대부분의 키가 다른 서버로 재배치된다. 캐시라면 미스가 폭증한다.</p>
+            <summary>1. 여러 DB 에서 auto_increment 를 그대로 쓰면 안 되는 이유는?</summary>
+            <p>서버마다 번호를 따로 매겨 서로 같은 ID 가 생긴다 (중복).</p>
         </details>
         <details>
-            <summary>2. 안정 해시에서 서버 추가/삭제 시 재배치되는 키의 수는?</summary>
-            <p>평균 k/n 개 (키 개수 / 슬롯 개수).</p>
+            <summary>2. 다중 마스터 복제에서 k 는? 단점은?</summary>
+            <p>k = DB 서버 수. 단점 : 여러 데이터 센터에 걸친 확장이 어렵고, 시간순이 보장되지 않고, 서버 추가/삭제가 어렵다.</p>
         </details>
         <details>
-            <summary>3. 키가 저장될 서버는 어떻게 정하나?</summary>
-            <p>키의 해시 위치에서 링을 시계 방향으로 탐색해 처음 만나는 서버.</p>
+            <summary>3. UUID 의 장점과 단점은?</summary>
+            <p>장점 : 서버 간 조율이 필요 없고 확장이 쉽다. 단점 : 시간순 정렬 불가, 128비트로 길다, 숫자만이 아니다.</p>
         </details>
         <details>
-            <summary>4. 기본 해시 링의 두 가지 문제와 해결책은?</summary>
-            <p>파티션 크기 불균형, 키 분포 불균형 → 가상 노드로 해결.</p>
+            <summary>4. 티켓 서버의 장점과 문제는?</summary>
+            <p>숫자 ID 를 쉽게 만들고 구현이 쉽다. 하지만 SPOF 라서 장애 시 전체가 영향을 받는다.</p>
         </details>
         <details>
-            <summary>5. 가상 노드를 늘리면 장점과 단점은?</summary>
-            <p>장점 : 키 분포가 더 균등해진다. 단점 : 가상 노드 데이터를 저장할 공간이 더 든다.</p>
+            <summary>5. 스노우플레이크의 구획과 비트 수는? 같은 ms 에 몇 개까지?</summary>
+            <p>사인 1 + 타임스탬프 41 + 데이터센터 5 + 서버 5 + 일련번호 12 = 64비트. 일련번호 12비트이므로 서버 하나당 ms 당 4096개.</p>
         </details>
         <details>
-            <summary>6. 1장 샤딩의 어떤 문제를 해결하나?</summary>
-            <p>재샤딩 문제(데이터 재배치)와 핫스팟 키 문제.</p>
+            <summary>6. 스노우플레이크에서 시계 동기화가 중요한 이유는?</summary>
+            <p>타임스탬프가 ID 의 앞쪽을 차지하므로, 서버 시각이 어긋나면 순서가 깨지거나 같은 ID 가 만들어질 수 있다. NTP 로 맞춘다.</p>
         </details>
 
         <h2>더 공부할 거리 <span class="add">보충</span></h2>
         <ul>
-            <li>안정 해시 외 방식 : rendezvous(HRW) hashing, jump consistent hash</li>
-            <li>Cassandra 의 복제 (링에서 N 개 서버에 복제)</li>
-            <li>분산 캐시 (Memcached 클라이언트 샤딩)</li>
+            <li>UUID 버전(v1, v4, v7), ULID</li>
+            <li>NTP, 시계 오차 (clock drift)</li>
+            <li>분산 DB 의 ID 전략 (MongoDB ObjectId 등)</li>
         </ul>
 
         <p><a href="./index.html">← 대문으로</a> | <a href="./system_architecture_ch04.html">← 4장</a> | <a href="./system_architecture_ch06.html">6장 →</a></p>
