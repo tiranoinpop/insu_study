@@ -1,48 +1,62 @@
 <!DOCTYPE html>
-<!-- React 스터디 2단락 : ES6 문법 (예제 9~11). 교재 "초보자를 위한 리액트 200제" 를 Vite + React 19 로 실습 -->
+<!-- React 스터디 2단락 : React 에서 쓰는 ES6 문법과 jQuery (예제 9~16). 교재 "초보자를 위한 리액트 200제" 를 Vite + React 19 로 실습 -->
 <html lang="ko">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>React 2단락 - ES6 문법</title>
+        <title>React 2단락 - ES6 문법과 jQuery</title>
         <link href="./css/react_study.css" rel="stylesheet">
         <script src="./js/mobile_table.js" defer></script>
         <script src="./js/mobile_code.js" defer></script>
     </head>
     <body>
-        <p><a href="./index.html">← 대문으로</a> | <a href="./react_study.html">React 스터디 목록</a></p>
-        <h1>React 스터디 2단락 : ES6 문법</h1>
+        <p><a href="./index.html">← 대문으로</a> | <a href="./react_study.html">React 스터디 목록</a> | <a href="./react_study_01.html">← 1단락</a></p>
+        <h1>React 스터디 2단락 : React 에서 쓰는 ES6 문법과 jQuery</h1>
         <p>
-            교재 : <strong>초보자를 위한 리액트 200제</strong> 예제 9~11 (실습은 <strong>Vite + React 19</strong>).<br/>
+            교재 : <strong>초보자를 위한 리액트 200제</strong> 예제 9~16 (실습은 <strong>Vite + React 19</strong>).<br/>
             실습 코드 : <a href="https://github.com/tiranoinpop/react_study">github.com/tiranoinpop/react_study</a><br/>
+            모든 예제는 클래스형 컴포넌트의 <code>componentDidMount()</code> 안에서 실행하고, 결과는 <strong>F12 → Console</strong> 에서 본다.<br/>
             <span class="add">보충</span> 표시는 공부 노트에 없던 내용을 보강한 부분이다.
-        </p>
-        <p>
-            ES6(ECMAScript 2015) 는 JavaScript 의 큰 문법 개편이다. React 코드는 ES6 문법을 전제로 쓰여 있어서 먼저 익혀 둔다.
-            (JavaScript 쪽 정리는 <a href="./javascript_study.html">javascript_study.html</a> 에도 있다.)
         </p>
 
         <!-- ============================================================ -->
-        <h2>예제 9. ES6 문자열 : 템플릿 리터럴과 문자열 함수</h2>
-        <p>실습 파일 : <code>src/R009_Es6.jsx</code> (App.jsx 에서 <code>import Es6 from './R009_Es6'</code> 후 <code>&lt;Es6 /&gt;</code> 로 사용)</p>
-<pre><code>componentDidMount() {
-    // 기존 JavaScript : + 로 이어 붙이고, 줄바꿈은 \n
-    var jsString1 = '자바스크립트'
-    var jsString2 = '입니다.\n 다음 줄 입니다.'
-    console.log(jsString1 + ' 문자열' + jsString2)
+        <h2>★ 핵심 : ES6 문법 한눈에</h2>
+        <p>
+            <strong>ES6</strong>(ECMAScript 2015) : 2015년에 크게 바뀐 JavaScript 표준. React 코드는 거의 ES6 이후 문법으로 쓰여 있어서, 이걸 알아야 React 코드가 읽힌다.
+            JavaScript 노트에서 배운 내용이 많으니 링크를 같이 보자.
+        </p>
+        <table>
+            <tr><th>문법</th><th>예전 (ES5)</th><th>ES6</th><th>예제</th></tr>
+            <tr><td>문자열</td><td><code>'a' + x + 'b'</code></td><td>템플릿 리터럴 <code>`a${x}b`</code></td><td>9</td></tr>
+            <tr><td>변수</td><td><code>var</code></td><td><code>let</code>, <code>const</code></td><td>10</td></tr>
+            <tr><td>배열·객체 합치기</td><td><code>concat</code>, <code>Object.assign</code></td><td>전개 연산자 <code>[...a]</code>, <code>{...o}</code></td><td>11</td></tr>
+            <tr><td>나눠 담기</td><td>하나씩 대입</td><td>구조 분해 <code>const [a, b] = arr</code></td><td>11</td></tr>
+            <tr><td>클래스</td><td>함수 + <code>prototype</code></td><td><code>class</code></td><td>12</td></tr>
+            <tr><td>함수</td><td><code>function () {}</code></td><td>화살표 함수 <code>() =&gt; {}</code> (this 가 바깥 것)</td><td>13</td></tr>
+            <tr><td>반복</td><td><code>for (i...)</code></td><td><code>forEach</code>, <code>map</code> (콜백)</td><td>14, 15</td></tr>
+        </table>
+        <div class="key">
+            이 단락에서 가장 중요한 것 : <strong>화살표 함수와 this</strong> (예제 13).<br/>
+            일반 <code>function</code> 콜백 안의 <code>this</code> 는 컴포넌트가 아니다. → <code>bind(this)</code> 하거나 <strong>화살표 함수</strong>를 쓴다.
+            클래스형 컴포넌트의 이벤트 처리에서 계속 나온다.
+        </div>
 
-    // ES6 : 백틱(`) 과 ${ }
-    var Es6String1 = 'ES6'
-    var Es6String2 = '입니다.'
-    console.log(`${Es6String1} 문자열 ${Es6String2}!!
-______다음줄 입니다`)
+        <!-- ============================================================ -->
+        <h2>1. ES6 문자열 : 템플릿 리터럴과 문자열 함수 (예제 9)</h2>
+<pre><code>// src/R009_Es6.jsx (componentDidMount 안)
+var jsString1 = '자바스크립트'
+var jsString2 = '입니다.\n 다음 줄 입니다.'
+console.log(jsString1 + ' 문자열' + jsString2)      // ES5 : + 로 이어 붙이고, 줄바꿈은 \n
 
-    // ES6 에 추가된 String 함수
-    var LongString = "ES6에 추가된 String 함수들입니다."
-    console.log('startsWith : ' + LongString.startsWith("ES6에 추가"))
-    console.log('endsWith : ' + LongString.endsWith("함수들입니다."))
-    console.log('includes : ' + LongString.includes("추가된 String"))
-}</code></pre>
+var Es6String1 = 'ES6'
+var Es6String2 = '입니다.'
+console.log(`${Es6String1} 문자열 ${Es6String2}!!
+______다음줄 입니다`)                                // ES6 : 백틱 안에 ${ }, 엔터를 그대로 줄바꿈으로
+
+var LongString = "ES6에 추가된 String 함수들입니다."
+console.log('startsWith : ' + LongString.startsWith("ES6에 추가"))
+console.log('endsWith : ' + LongString.endsWith("함수들입니다."))
+console.log('includes : ' + LongString.includes("추가된 String"))</code></pre>
 <pre><code>// 콘솔
 자바스크립트 문자열입니다.
  다음 줄 입니다.
@@ -51,53 +65,32 @@ ______다음줄 입니다
 startsWith : true
 endsWith : true
 includes : true</code></pre>
-
-        <h3>9-1. 템플릿 리터럴 (Template Literal)</h3>
         <table>
-            <tr><th>구분</th><th>기존 방식</th><th>ES6 방식</th></tr>
-            <tr><td>따옴표</td><td><code>' '</code> 또는 <code>" "</code></td><td><strong>백틱</strong> <code>` `</code> (키보드 1 왼쪽의 `)</td></tr>
-            <tr><td>변수 끼우기</td><td><code>a + ' 문자열' + b</code> (+ 로 이어 붙임)</td><td><code>`${a} 문자열 ${b}`</code></td></tr>
-            <tr><td>줄바꿈</td><td><code>\n</code> 을 써야 함</td><td>코드에서 <strong>엔터를 친 그대로</strong> 줄바꿈이 된다</td></tr>
+            <tr><th>함수</th><th>뜻</th></tr>
+            <tr><td><code>startsWith("x")</code></td><td>x 로 <strong>시작</strong>하나</td></tr>
+            <tr><td><code>endsWith("x")</code></td><td>x 로 <strong>끝</strong>나나</td></tr>
+            <tr><td><code>includes("x")</code></td><td>x 를 <strong>포함</strong>하나 (예전엔 <code>indexOf("x") !== -1</code>)</td></tr>
         </table>
-        <ul>
-            <li><code>${ }</code> 안에는 변수뿐 아니라 <strong>JS 식</strong>도 넣을 수 있다 : <code>`${a + b}`</code>, <code>`${x > 0 ? '양수' : '음수'}`</code> <span class="add">보충</span></li>
-            <li>백틱 안의 <strong>들여쓰기·공백도 문자열에 그대로 포함</strong>된다. 위 예제의 <code>______</code> 는 줄 시작 위치를 눈에 보이게 하려고 넣은 것 <span class="add">보충</span></li>
-            <li>JSX 의 <code>{ }</code> 와 모양이 비슷하지만 다르다. <code>${ }</code> 는 <strong>백틱 문자열 안</strong>에서만 쓴다 <span class="add">보충</span></li>
-        </ul>
-
-        <h3>9-2. ES6 에 추가된 String 함수</h3>
-        <table>
-            <tr><th>함수</th><th>하는 일</th><th>예제 결과</th></tr>
-            <tr><td><code>startsWith(s)</code></td><td>문자열이 <strong>s 로 시작</strong>하는가</td><td><code>"ES6에 추가"</code> → true</td></tr>
-            <tr><td><code>endsWith(s)</code></td><td>문자열이 <strong>s 로 끝</strong>나는가</td><td><code>"함수들입니다."</code> → true</td></tr>
-            <tr><td><code>includes(s)</code></td><td>문자열 <strong>안에 s 가 있는가</strong> (위치 무관)</td><td><code>"추가된 String"</code> → true</td></tr>
-        </table>
-        <ul>
-            <li>셋 다 <strong>true / false (Boolean)</strong> 를 반환한다</li>
-            <li>대소문자를 구분한다 : <code>"abc".includes("B")</code> → false <span class="add">보충</span></li>
-            <li>예전에는 <code>indexOf(s) !== -1</code> 처럼 위치를 구해서 비교해야 했다. 이름만으로 뜻이 보이는 것이 장점 <span class="add">보충</span></li>
-        </ul>
+        <p class="tip">👉 자세한 내용 : <a href="./javascript_study.html">JavaScript 노트</a> 3-1 (템플릿 리터럴), 4 (문자열 메서드)</p>
 
         <!-- ============================================================ -->
-        <h2>예제 10. 변수 선언 : var, let, const</h2>
-        <p>실습 파일 : <code>src/R010_Variable.jsx</code></p>
-<pre><code>componentDidMount() {
-    var varName = 'react';
-    console.log('varName : ' + varName)
-    var varName = 200;      // 경고는 뜨나 재선언 가능
-    console.log('varName : ' + varName)
+        <h2>2. var, let, const (예제 10)</h2>
+<pre><code>// src/R010_Variable.jsx (componentDidMount 안)
+var varName = 'react';
+console.log('varName : ' + varName)
+var varName = 200;            // 재선언 가능 (ESLint 경고 no-redeclare)
+console.log('varName : ' + varName)
 
-    let letName = 'react';
-    console.log('letName : ' + letName)
-    // let letName = 200;   // 재선언 불가
-    letName = 200;          // 재할당 가능
-    console.log('letName : ' + letName)
+let letName = 'react';
+console.log('letName : ' + letName)
+// let letName = 200;         // 재선언 불가 (SyntaxError)
+letName = 200;                // 재할당 가능
+console.log('letName : ' + letName)
 
-    const constName = 'react';
-    console.log('constName : ' + constName)
-    // const constName = 200;  // 재선언 불가
-    // constName = 200;        // 재할당 불가
-}</code></pre>
+const constName = 'react';
+console.log('constName : ' + constName)
+// const constName = 200;     // 재선언 불가
+// constName = 200;           // 재할당 불가 (TypeError)</code></pre>
 <pre><code>// 콘솔
 varName : react
 varName : 200
@@ -105,141 +98,362 @@ letName : react
 letName : 200
 constName : react</code></pre>
         <table>
-            <tr><th>구분</th><th>var</th><th>let</th><th>const</th></tr>
-            <tr><td>재선언 (같은 이름으로 또 선언)</td><td>가능 (경고만)</td><td><strong>불가</strong></td><td><strong>불가</strong></td></tr>
-            <tr><td>재할당 (값 바꾸기)</td><td>가능</td><td>가능</td><td><strong>불가</strong></td></tr>
-            <tr><td>도입 시기</td><td>예전부터</td><td>ES6</td><td>ES6</td></tr>
-        </table>
-        <div class="key">
-            · <strong>기본은 <code>const</code></strong>, 값을 바꿔야 할 때만 <code>let</code>, <code>var</code> 는 쓰지 않는 것이 요즘 관례 <span class="add">보충</span><br/>
-            · <code>var</code> 는 실수로 같은 이름을 또 선언해도 조용히 덮어써서 버그를 찾기 어렵다 → <code>let</code>/<code>const</code> 는 <strong>에러로 막아준다</strong>
-        </div>
-        <ul>
-            <li>예제의 <code>// 경고는 뜨나 재선언 가능</code> : VS Code(ESLint) 에 경고 표시가 뜨지만 실행은 된다. 그래서 <code>varName</code> 이 <code>react</code> → <code>200</code> 으로 찍힌다</li>
-            <li>주석으로 막아 둔 두 줄은 주석을 풀면 <strong>에러가 난다</strong> (재선언 불가 / 재할당 불가). 직접 풀어서 에러 메시지를 확인해 보면 좋다</li>
-            <li><code>componentDidMount</code> 안에서 실행했으므로 결과는 화면이 아니라 <strong>브라우저 콘솔(F12)</strong> 에 나온다. 화면에는 <code>[THIS IS VARIABLE]</code> 만 보인다</li>
-        </ul>
-        <table>
-            <tr><th>추가 개념 <span class="add">보충</span></th><th>설명</th></tr>
-            <tr><td>유효 범위(scope)</td><td><code>var</code> 는 <strong>함수</strong> 단위, <code>let</code>/<code>const</code> 는 <strong>블록 { }</strong> 단위. <code>if</code>, <code>for</code> 안에서 선언하면 그 밖에서는 안 보인다</td></tr>
-            <tr><td>const 와 객체</td><td><code>const obj = { a: 1 }</code> 에 <code>obj.a = 2</code> 는 <strong>가능</strong>. 막는 것은 <code>obj = ...</code> 처럼 변수 자체를 다른 값으로 바꾸는 것뿐</td></tr>
-            <tr><td>호이스팅</td><td><code>var</code> 는 선언 전에 써도 <code>undefined</code> 로 나오지만, <code>let</code>/<code>const</code> 는 선언 전에 쓰면 에러 (TDZ)</td></tr>
+            <tr><th></th><th>재선언</th><th>재할당</th><th>범위(scope)</th></tr>
+            <tr><td><code>var</code></td><td>가능</td><td>가능</td><td><strong>함수</strong> 단위 (블록 <code>{ }</code> 을 무시) <span class="add">보충</span></td></tr>
+            <tr><td><code>let</code></td><td><strong>불가</strong></td><td>가능</td><td><strong>블록</strong> 단위</td></tr>
+            <tr><td><code>const</code></td><td><strong>불가</strong></td><td><strong>불가</strong></td><td><strong>블록</strong> 단위</td></tr>
         </table>
         <p class="tip">
-            <span class="add">보충</span> 이 예제를 만들 때 <code>import React, { component }</code> 처럼 <code>Component</code> 를 소문자로 쓰면 화면이 통째로 비어 보인다.
-            <code>extends Component</code> 에서 에러가 나면 React 가 <code>App</code> 전체를 그리지 못하기 때문이다.
-            화면이 하얗게 나오면 먼저 <strong>콘솔(F12)</strong> 의 빨간 에러를 확인한다.
+            <span class="add">보충</span> 기본은 <strong><code>const</code></strong>, 값을 바꿔야 할 때만 <code>let</code>, <strong><code>var</code> 는 쓰지 않는다</strong>.
+            <code>const</code> 로 만든 배열·객체는 <strong>안의 내용은 바꿀 수 있다</strong> (<code>const arr = []; arr.push(1)</code> 은 OK). 변수가 가리키는 대상을 바꾸는 것만 막는다.
+            👉 <a href="./javascript_study.html">JavaScript 노트</a> 7, 10-9
         </p>
 
         <!-- ============================================================ -->
-        <h2>예제 11. 전개 연산자 (Spread Operator) : 배열·객체 합치기</h2>
-        <p>실습 파일 : <code>src/R011_SpreadOperator.jsx</code></p>
-<pre><code>// 배열
+        <h2>3. 전개 연산자와 구조 분해 (예제 11)</h2>
+<pre><code>// src/R011_SpreadOperator.jsx (componentDidMount 안)
+// 배열
 var varArray1 = ['num1', 'num2', 'num3'];
 var varArray2 = ['num4', 'num5', 'num6'];
-var sumVarArr = [varArray1, varArray2];          // 기존 : 배열 안에 배열이 들어감
-let sumLetArr = [...varArray1, ...varArray2];    // ES6 : 요소가 펼쳐져 하나의 배열
-const [sum1, sum2, ...remain] = sumLetArr;       // 나머지 요소 모으기
+var sumVarArr = [varArray1, varArray2];             // ES5 처럼 보이지만 사실 "배열 2개를 담은 배열"
+console.log('sumVarArr : ' + sumVarArr);
+let sumLetArr = [...varArray1, ...varArray2];       // ES6 : 요소를 풀어서 하나의 배열로
+console.log('sumLetArr : ' + sumLetArr);
+const [sum1, sum2, ...remain] = sumLetArr;          // 구조 분해 : 앞 2개 + 나머지
+console.log('3. sum1 : ' + sum1 + ', sum2 : ' + sum2 + ', remain : ' + remain);
 
 // 객체
-var varObj1 = {key1:'value1', key2:'value2', key3:'value3'};
-var varObj2 = {key4:'value4', key5:'value5', key6:'value6'};
-var sumVarObj = Object.assign({}, varObj1, varObj2);   // 기존 JavaScript
-let sumLetObj = {...varObj1, ...varObj2};              // ES6
-var {key1, key2, ...remainObj} = sumLetObj;            // 나머지 속성 모으기</code></pre>
+var varObj1 = { key1: 'value1', key2: 'value2', key3: 'value3' };
+var varObj2 = { key4: 'value4', key5: 'value5', key6: 'value6' };
+var sumVarObj = Object.assign({}, varObj1, varObj2);   // ES5 : Object.assign 으로 합치기
+console.log('sumVarObj : ' + JSON.stringify(sumVarObj));
+let sumLetObj = { ...varObj1, ...varObj2 };            // ES6 : 전개 연산자로 합치기
+console.log('sumLetObj : ' + JSON.stringify(sumLetObj));
+var { key1, key2, ...remainObj } = sumLetObj;          // 객체 구조 분해 : 이름으로 + 나머지
+console.log('4. key1 : ' + key1 + ', key2 : ' + key2 + ', remainObj : ' + JSON.stringify(remainObj));</code></pre>
 <pre><code>// 콘솔
 sumVarArr : num1,num2,num3,num4,num5,num6
 sumLetArr : num1,num2,num3,num4,num5,num6
 3. sum1 : num1, sum2 : num2, remain : num3,num4,num5,num6
 sumVarObj : {"key1":"value1","key2":"value2","key3":"value3","key4":"value4","key5":"value5","key6":"value6"}
-sumLetObj : {"key1":"value1",... 위와 같음 ...,"key6":"value6"}
+sumLetObj : (위와 같음)
 4. key1 : value1, key2 : value2, remainObj : {"key3":"value3","key4":"value4","key5":"value5","key6":"value6"}</code></pre>
-
-        <h3>11-1. 배열 합치기</h3>
         <table>
-            <tr><th>방식</th><th>코드</th><th>실제 구조</th></tr>
-            <tr><td>기존</td><td><code>[varArray1, varArray2]</code></td><td><strong>2칸짜리 배열</strong> (각 칸이 배열) : <code>[[...], [...]]</code></td></tr>
-            <tr><td>ES6</td><td><code>[...varArray1, ...varArray2]</code></td><td><strong>6칸짜리 한 배열</strong> : <code>['num1', ..., 'num6']</code></td></tr>
+            <tr><th>주의할 점 <span class="add">보충</span></th><th>설명</th></tr>
+            <tr><td><code>[varArray1, varArray2]</code> 와 <code>[...varArray1, ...varArray2]</code> 가 똑같이 찍힌다?</td><td>
+                <code>'문자열' + 배열</code> 은 배열을 <strong>쉼표로 이어 붙인 문자열</strong>로 바꿔서 둘 다 같아 보일 뿐이다.<br/>
+                실제로는 <code>[[num1,num2,num3],[num4,num5,num6]]</code> (길이 2) vs <code>[num1, ..., num6]</code> (길이 6).
+                <code>console.log(sumVarArr)</code> 처럼 <strong>+ 없이</strong> 찍거나 <code>JSON.stringify</code> 로 찍으면 차이가 보인다.
+                ES5 에서 배열을 합치는 방법은 <code>varArray1.concat(varArray2)</code>
+            </td></tr>
+            <tr><td>객체는 왜 <code>JSON.stringify</code> 로 찍나</td><td><code>'문자열' + 객체</code> 는 <code>[object Object]</code> 로 찍혀서 내용이 안 보이기 때문</td></tr>
+            <tr><td>같은 키가 겹치면</td><td><strong>뒤에 오는 것이 이긴다</strong> (<code>Object.assign</code> 도 전개 연산자도 같음)</td></tr>
+            <tr><td><code>...</code> 의 두 얼굴</td><td>오른쪽(값 자리)에선 <strong>풀어헤치기</strong>(전개), 왼쪽(받는 자리)에선 <strong>나머지 모으기</strong>(rest)</td></tr>
         </table>
-        <ul>
-            <li><code>...</code> 은 배열을 <strong>요소 하나하나로 펼친다</strong> (전개)</li>
-            <li><span class="add">보충</span> 두 콘솔 결과가 똑같아 보이는 이유 : <code>'문자열' + 배열</code> 은 배열을 <code>toString()</code> 해서 <strong>중첩을 풀고 쉼표로 이은 문자열</strong>로 바꾸기 때문. 구조 차이를 보려면 <code>console.log(sumVarArr)</code> 처럼 <strong>문자열과 더하지 말고</strong> 찍는다</li>
-        </ul>
+        <p class="tip">
+            👉 <a href="./javascript_study.html">JavaScript 노트</a> 10-2 (나머지 매개변수·전개 연산자), 11-8 (구조 분해), 11-9 (전개로 복사).
+            1단락의 <code>getDerivedStateFromProps</code> · <code>setState</code> 가 state 를 합치는 것도 <code>{ ...state, ...변경 }</code> 와 같은 원리다.
+        </p>
 
-        <h3>11-2. 나머지 요소 모으기 (배열 구조 분해 + ...)</h3>
-        <ul>
-            <li><code>const [sum1, sum2, ...remain] = sumLetArr</code> : 앞에서부터 <strong>순서대로</strong> sum1, sum2 에 넣고, <strong>남은 것을 배열로 remain 에 모은다</strong></li>
-            <li>같은 <code>...</code> 인데 <strong>오른쪽(값)에서는 펼치고, 왼쪽(변수 선언)에서는 모은다</strong> <span class="add">보충</span></li>
-            <li><code>...remain</code> 은 <strong>맨 마지막에만</strong> 쓸 수 있다 <span class="add">보충</span></li>
-        </ul>
+        <!-- ============================================================ -->
+        <h2>4. class 와 prototype (예제 12)</h2>
+<pre><code>// src/R012_Class&amp;Prototype.jsx (componentDidMount 안)
+// ES5 : 함수(생성자) + prototype 으로 "클래스처럼"
+var ExamCountFunc = (function () {             // 즉시 호출 함수(IIFE)로 감싸서
+    function ExamCount(num) {                  // 생성자 역할의 함수
+        this.number = num;
+    }
+    ExamCount.prototype.showNum = function () { // 메서드는 prototype 에
+        console.log('1. react_ ' + this.number);
+    }
+    return ExamCount;
+}());
+var cnt = new ExamCountFunc('200');
+cnt.showNum();
 
-        <h3>11-3. 객체 합치기</h3>
-        <table>
-            <tr><th>방식</th><th>코드</th></tr>
-            <tr><td>기존 JavaScript</td><td><code>Object.assign({}, varObj1, varObj2)</code> : 빈 객체 <code>{}</code> 에 차례로 복사해 합침</td></tr>
-            <tr><td>ES6</td><td><code>{...varObj1, ...varObj2}</code> : 속성들을 펼쳐서 새 객체에 담음</td></tr>
-        </table>
+// ES6 : class 문법
+class ExamCountClass {
+    constructor(num2) {                        // 생성자
+        this.number2 = num2;
+    }
+    showNum() {                                // 메서드 (자동으로 prototype 에 들어감)
+        console.log(`2. react_${this.number2}`);
+    }
+}
+var cnt2 = new ExamCountClass('2hundred');
+cnt2.showNum();</code></pre>
+<pre><code>// 콘솔
+1. react_ 200
+2. react_2hundred</code></pre>
         <ul>
-            <li>둘 다 <strong>새 객체</strong>를 만든다. 원본 <code>varObj1</code>, <code>varObj2</code> 는 바뀌지 않는다 (그래서 <code>Object.assign</code> 첫 인자가 <code>{}</code>)</li>
-            <li><span class="add">보충</span> 같은 키가 있으면 <strong>뒤에 오는 것이 덮어쓴다</strong> : <code>{...{a:1}, ...{a:2}}</code> → <code>{a:2}</code>. 기존 값을 일부만 바꾼 새 객체를 만들 때 자주 쓴다 (<code>{...state, count: 1}</code>)</li>
-            <li><span class="add">보충</span> 복사는 <strong>얕은 복사</strong>다. 속성 값이 객체면 그 객체는 복사되지 않고 같은 것을 가리킨다</li>
-            <li><code>JSON.stringify(객체)</code> : 객체를 문자열로 바꿔 찍는다. 그냥 <code>'...' + 객체</code> 하면 <code>[object Object]</code> 로 나오기 때문</li>
-        </ul>
-
-        <h3>11-4. 나머지 속성 모으기 (객체 구조 분해 + ...)</h3>
-        <ul>
-            <li><code>var {key1, key2, ...remainObj} = sumLetObj</code> : <strong>이름이 같은 키</strong>의 값을 변수 key1, key2 에 꺼내고, <strong>나머지 속성들을 객체로 remainObj 에 모은다</strong></li>
-            <li>배열은 <strong>순서</strong>로, 객체는 <strong>키 이름</strong>으로 꺼낸다 (객체는 순서가 아니라 이름이 맞아야 함) <span class="add">보충</span></li>
+            <li>ES6 의 <code>class</code> 는 <strong>새로운 기능이 아니라 prototype 방식을 보기 좋게 쓴 문법</strong>(문법적 설탕, syntactic sugar) 이다. 하는 일은 같다</li>
+            <li>React 의 클래스형 컴포넌트 <code>class X extends Component</code> 도 이 ES6 class 다. <code>extends</code> 는 상속, <code>super(props)</code> 는 부모 생성자 호출</li>
+            <li><span class="add">보충</span> C++ 클래스와 비슷하게 보이지만, 메서드가 각 객체에 복사되는 게 아니라 <strong>prototype 하나를 모든 객체가 공유</strong>한다</li>
         </ul>
         <p class="tip">
-            <span class="add">보충</span> 현재 <code>R011_SpreadOperator.jsx</code> 는 파일 끝에 <code>export default</code> 가 없고 <code>App.jsx</code> 에도 연결되지 않았다.
-            화면에서 확인하려면 <code>export default R011_SpreadOperator</code> 를 추가하고 <code>import Spread from './R011_SpreadOperator'</code> 후 <code>&lt;Spread /&gt;</code> 를 넣는다.
+            👉 <a href="./javascript_study.html">JavaScript 노트</a> 11-3 (prototype), 10-9 (즉시 호출 함수).
+            <span class="add">보충</span> 파일 이름에 <code>&amp;</code> 가 있으면 명령줄(cmd)에서 특수문자로 해석되는 등 불편할 수 있다. <code>R012_ClassPrototype.jsx</code> 처럼 영문·숫자·<code>_</code> 만 쓰는 게 안전하다.
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>5. 화살표 함수와 this (예제 13) ★</h2>
+<pre><code>// src/R013_ArrowFunction.jsx
+class R013_ArrowFunction extends Component {
+    constructor(props) {
+        super(props)
+        this.state = {
+            arrrowFunc: 'React200',      // (책 그대로 r 이 3개 : 이름이니 동작엔 문제없음)
+            num: 3
+        };
+    }
+
+    componentDidMount() {
+        Function1(1);
+        this.Function2(1, 1);
+        this.Function3(1, 3);
+        this.Function4();
+        this.Function5(0, 2, 3);
+
+        function Function1(num1) {                          // ① ES5 함수 선언
+            return console.log(num1 + '.Es5 Function');
+        }
+    }
+
+    Function2 = (num1, num2) =&gt; {                          // ② 화살표 함수 (클래스 필드)
+        let num3 = num1 + num2;
+        console.log(num3 + '.Arrow Function :' + this.state.arrrowFunc);
+    }
+
+    Function3() {                                            // ③ 콜백 + this 를 변수에 담기
+        var this_bind = this;
+        setTimeout(function () {
+            console.log(this_bind.state.num + 'Es5 Callback Function nobind : ');
+            console.log(this.state.arrrowFunc);              // ❌ 여기 this 는 window → 에러
+        }, 100);
+    }
+
+    Function4() {                                            // ④ 콜백 + bind(this)
+        setTimeout(function () {
+            console.log('4. Es5 Callback Function Bind : ' + this.state.arrrowFunc);
+        }.bind(this), 100)
+    }
+
+    Function5 = (num1, num2, num3) =&gt; {                    // ⑤ 콜백도 화살표 함수
+        const num4 = num1 + num2 + num3;
+        setTimeout(() =&gt; {
+            console.log(num4 + '.Arrow Callback Function : ' + this.state.arrrowFunc);
+        }, 100)
+    }
+    ...
+}</code></pre>
+<pre><code>// 콘솔 (③④⑤ 는 setTimeout 이라 100ms 뒤에 찍힌다)
+1.Es5 Function
+2.Arrow Function :React200
+3Es5 Callback Function nobind :
+❌ TypeError: Cannot read properties of undefined (reading 'arrrowFunc')
+4. Es5 Callback Function Bind : React200
+5.Arrow Callback Function : React200</code></pre>
+
+        <h3>콜백 안의 this 를 컴포넌트로 만드는 3가지 방법</h3>
+        <table>
+            <tr><th>방법</th><th>어떻게</th><th>결과</th></tr>
+            <tr><td>③ 변수에 담기</td><td>바깥에서 <code>var this_bind = this</code>, 콜백 안에서 <code>this_bind</code> 사용</td><td>✅ (콜백 안의 <code>this</code> 를 그대로 쓰면 ❌)</td></tr>
+            <tr><td>④ <code>bind(this)</code></td><td>콜백 함수에 <code>.bind(this)</code> 로 this 를 <strong>고정</strong>해서 넘김</td><td>✅</td></tr>
+            <tr><td>⑤ 화살표 함수</td><td>화살표 함수는 <strong>자기 this 가 없어서 바깥의 this</strong> 를 그대로 씀</td><td>✅ 가장 간단, 요즘 표준</td></tr>
+        </table>
+        <ul>
+            <li>일반 <code>function</code> 의 <code>this</code> 는 <strong>누가 호출했느냐</strong>로 정해진다. <code>setTimeout</code> 이 나중에 부르면 <code>this</code> 는 <code>window</code> → <code>window.state</code> 는 없으니 <code>undefined.arrrowFunc</code> 에서 <strong>TypeError</strong></li>
+            <li><span class="add">보충</span> 책 주석은 "undefined 가 나온다" 지만 실제로는 <code>this.state</code> 가 undefined 라서 그 안의 값을 읽다가 <strong>에러</strong>가 난다. setTimeout 안의 에러라 화면은 그대로 보인다</li>
+            <li>클래스 안에서 <code>Function2 = () =&gt; {}</code> 처럼 쓰면(<strong>클래스 필드 + 화살표 함수</strong>) 메서드 안의 this 가 항상 컴포넌트다. 이벤트 핸들러에 많이 쓴다</li>
+        </ul>
+
+        <h3>bind 는 어디서 나왔나 : 모든 함수에 기본으로 있다</h3>
+        <p>함수도 객체이고, 모든 함수는 <code>Function.prototype</code> 의 메서드를 물려받는다 (문자열이 <code>toUpperCase()</code> 를 쓰는 것과 같은 원리).</p>
+        <table>
+            <tr><th>메서드</th><th>하는 일</th></tr>
+            <tr><td><code>bind(this값)</code></td><td>this 가 고정된 <strong>새 함수를 만들어 돌려준다</strong> (바로 실행하지 않음)</td></tr>
+            <tr><td><code>call(this값, 인자1, ...)</code></td><td>this 를 정해서 <strong>바로 실행</strong></td></tr>
+            <tr><td><code>apply(this값, [인자들])</code></td><td>call 과 같고 인자를 배열로</td></tr>
+        </table>
+<pre><code>// Function4 를 풀어서 쓰면
+const callback = function () { console.log(this.state.arrrowFunc) }  // ① 함수 만들기
+const boundCallback = callback.bind(this)                           // ② this(컴포넌트) 고정한 새 함수
+setTimeout(boundCallback, 100)                                      // ③ 그걸 넘기기</code></pre>
+
+        <h3>실습하며 겪은 실수</h3>
+        <table>
+            <tr><th>실수</th><th>결과 / 해결</th></tr>
+            <tr><td><code>Function4</code> 를 두 번 정의하고 <code>Function5</code> 는 없음</td><td><code>this.Function5 is not a function</code>. <strong>componentDidMount 에서 에러</strong>가 나면 React 가 앱 전체를 내려서 <strong>화면이 하얗게</strong> 된다. 두 번째 이름을 <code>Function5</code> 로</td></tr>
+            <tr><td>같은 이름 메서드 2개</td><td>뒤의 것이 앞의 것을 <strong>덮어쓴다</strong>. ESLint 가 <code>Duplicate name</code> 으로 알려 줌</td></tr>
+        </table>
+        <p class="tip">👉 <a href="./javascript_study.html">JavaScript 노트</a> 10-5 (콜백), 10-7 (화살표 함수), 10-8 (setTimeout)</p>
+
+        <!-- ============================================================ -->
+        <h2>6. forEach (예제 14)</h2>
+<pre><code>// src/R014_ForEach.jsx (componentDidMount 안)
+var For_Arr = [3, 2, 8, 8];
+var For_NewArr = [];
+for (var i = 0; i &lt; For_Arr.length; i++) {      // 기본 for 문 (C 와 같음)
+    For_NewArr.push(For_Arr[i]);
+}
+console.log("1. For_newArr : [" + For_NewArr + "]");
+
+var ForEach_Arr = [3, 3, 9, 8];
+var ForEach_newArr = [];
+ForEach_Arr.forEach((result) =&gt; {               // 요소마다 콜백 실행
+    ForEach_newArr.push(result);
+})
+console.log("2. ForEach_newArr : [" + ForEach_newArr + "]");</code></pre>
+<pre><code>// 콘솔
+1. For_newArr : [3,2,8,8]
+2. ForEach_newArr : [3,3,9,8]</code></pre>
+        <ul>
+            <li><code>forEach</code> 는 배열의 요소마다 콜백을 <code>(value, index, array)</code> 로 호출한다. 인덱스 변수를 직접 관리하지 않아도 된다</li>
+            <li><span class="add">보충</span> <code>forEach</code> 는 <strong>반환값이 없다</strong>(<code>undefined</code>). 새 배열을 만들 땐 <code>push</code> 를 하거나 다음 예제의 <code>map</code> 을 쓴다. 중간에 <code>break</code> 로 멈출 수 없다 (멈춰야 하면 <code>for</code> / <code>for...of</code>)</li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <h2>7. map (예제 15)</h2>
+<pre><code>// src/R015_Map.jsx (componentDidMount 안)
+var Map_Arr = [1, 5, 6, 7]
+let Map_newArr = Map_Arr.map(x =&gt; x);            // 그대로 복사한 새 배열
+console.log("1. Map_newArr : [" + Map_newArr + "]");
+
+let Map_multiArr = Map_Arr.map(x =&gt; x * 2);      // 2배 한 새 배열
+console.log("2. Map_multiArr : [" + Map_multiArr + "]");
+
+var ObjArray = [
+    { key: 'react', value: '200' },
+    { key: '리액트', value: 'TwoHundred' }
+]
+let Map_objArr = ObjArray.map((obj, index) =&gt; {
+    console.log((index + 3) + ".obj : " + JSON.stringify(obj))
+    var Obj = {};
+    Obj[obj.key] = obj.value;                     // key 값을 "속성 이름"으로 사용
+    return Obj;                                   // return 한 값이 새 배열의 요소
+});
+console.log("5.Map_objArr :" + JSON.stringify(Map_objArr));</code></pre>
+<pre><code>// 콘솔
+1. Map_newArr : [1,5,6,7]
+2. Map_multiArr : [2,10,12,14]
+3.obj : {"key":"react","value":"200"}
+4.obj : {"key":"리액트","value":"TwoHundred"}
+5.Map_objArr :[{"react":"200"},{"리액트":"TwoHundred"}]</code></pre>
+        <table>
+            <tr><th></th><th><code>forEach</code></th><th><code>map</code></th></tr>
+            <tr><td>콜백의 return</td><td>버려짐</td><td><strong>새 배열의 요소</strong>가 됨</td></tr>
+            <tr><td>돌려주는 것</td><td><code>undefined</code></td><td>같은 길이의 <strong>새 배열</strong> (원본은 그대로)</td></tr>
+        </table>
+        <ul>
+            <li><code>Obj[obj.key] = obj.value</code> : <code>[ ]</code> 안에 변수를 넣으면 <strong>그 값이 속성 이름</strong>이 된다 (<code>Obj.key</code> 라고 쓰면 "key" 라는 이름이 됨)</li>
+            <li><span class="add">보충</span> React 에서 <code>map</code> 은 <strong>배열을 화면 목록으로 바꿀 때</strong> 가장 많이 쓴다 : <code>{items.map(item =&gt; &lt;li key={item.id}&gt;{item.name}&lt;/li&gt;)}</code></li>
+        </ul>
+        <p class="tip">
+            <span class="add">보충</span> <code>App.jsx</code> 에서 <code>import Map from './R015_Map'</code> 처럼 <strong><code>Map</code></strong> 이라는 이름은 피하자.
+            JavaScript 에 원래 있는 내장 객체(<code>new Map()</code>)를 덮어써서 헷갈리는 버그가 날 수 있다 → <code>MapEx</code> 같은 이름으로.
+            👉 <a href="./javascript_study.html">JavaScript 노트</a> 10-6 (forEach / map / filter)
+        </p>
+
+        <!-- ============================================================ -->
+        <h2>8. React 에서 jQuery 쓰기 (예제 16)</h2>
+<pre><code>npm install jquery              # react_study 폴더에서 설치 → package.json 에 추가됨</code></pre>
+<pre><code>// src/R016_Jquery.jsx
+import React, { Component } from 'react'
+import $ from 'jquery'                     // jquery 를 $ 라는 이름으로 가져온다
+
+class R016_Jquery extends Component {
+    input_alert = (e) =&gt; {
+        var input_val = $('#inputId').val();   // id 가 inputId 인 input 의 값
+        alert(input_val);
+    }
+
+    render() {
+        return (
+            &lt;div&gt;
+                &lt;h2&gt;[THIS IS Jquery]&lt;/h2&gt;
+                &lt;input id="inputId" name="inputName" /&gt;
+                &lt;button id="buttonId" onClick={e =&gt; this.input_alert(e)}&gt;
+                    Jquery Button
+                &lt;/button&gt;
+            &lt;/div&gt;
+        )
+    }
+}
+
+export default R016_Jquery;</code></pre>
+        <ul>
+            <li>화면에서 값을 입력하면 input 태그의 <strong>value</strong> 로 저장된다. 그래서 <code>$('#inputId').val()</code> 로 읽을 수 있다</li>
+            <li>버튼을 클릭하면 <code>onClick</code> 의 화살표 함수가 <code>this.input_alert(e)</code> 를 호출한다</li>
+            <li><code>onClick={...}</code> : HTML 의 <code>onclick="..."</code> 과 달리 <strong>카멜 표기</strong>이고, 문자열이 아니라 <strong>함수</strong>를 넘긴다 <span class="add">보충</span></li>
+        </ul>
+        <h3>실습하며 겪은 실수</h3>
+        <table>
+            <tr><th>증상</th><th>원인 / 해결</th></tr>
+            <tr><td><code>Failed to resolve import "jquery"</code></td><td>jquery 를 <strong>설치하지 않음</strong> → <code>npm install jquery</code></td></tr>
+            <tr><td><code>does not provide an export named 'default'</code></td><td>파일 끝에 <code>export default R016_Jquery;</code> 가 없음</td></tr>
+            <tr><td>설치하고 고쳤는데도 안 됨</td><td>켜져 있던 <strong>개발 서버가 새 라이브러리를 모름</strong> → <code>Ctrl + C</code> 로 끄고 <code>npm run dev</code> 다시. 그래도 안 되면 <code>npm run dev -- --force</code></td></tr>
+        </table>
+        <p class="tip">
+            <span class="add">보충</span> 실무에서는 React 와 jQuery 를 <strong>같이 쓰지 않는 편</strong>이다.
+            React 는 화면을 <strong>state</strong> 로 관리하는데, jQuery 는 DOM 을 <strong>직접</strong> 바꿔서 서로 충돌할 수 있기 때문.
+            React 방식으로는 input 값을 <strong>state</strong> 나 <strong><code>ref</code></strong> 로 읽는다 (뒤 예제에서 나옴).
+            <code>$('#id')</code> 는 JavaScript 노트 14 의 <code>document.querySelector('#id')</code> 와 같은 역할이다.
         </p>
 
         <!-- ============================================================ -->
         <h2>복습 퀴즈 (눌러서 답 확인)</h2>
         <details>
-            <summary>1. 템플릿 리터럴은 어떤 따옴표로 쓰고, 변수는 어떻게 끼우나?</summary>
-            <p>백틱(<code>`</code>) 으로 감싸고 <code>${변수}</code> 로 끼운다. 줄바꿈도 엔터 그대로 된다.</p>
+            <summary>1. 템플릿 리터럴의 장점 2가지는?</summary>
+            <p><code>${ }</code> 로 변수·식을 바로 넣을 수 있고, 엔터를 그대로 줄바꿈으로 쓸 수 있다 (<code>\n</code> 불필요).</p>
         </details>
         <details>
-            <summary>2. startsWith, endsWith, includes 의 차이는?</summary>
-            <p>각각 문자열이 ~로 시작하는지 / ~로 끝나는지 / ~를 포함하는지를 true/false 로 알려준다.</p>
+            <summary>2. var / let / const 의 재선언 · 재할당 가능 여부는?</summary>
+            <p>var : 둘 다 가능 / let : 재선언 불가, 재할당 가능 / const : 둘 다 불가. 기본은 const, 바꿀 때만 let.</p>
         </details>
         <details>
-            <summary>3. var, let, const 의 재선언·재할당 가능 여부는?</summary>
-            <p>var : 둘 다 가능. let : 재선언 불가, 재할당 가능. const : 둘 다 불가.</p>
+            <summary>3. [arr1, arr2] 와 [...arr1, ...arr2] 의 차이는?</summary>
+            <p>앞은 배열 두 개를 담은 길이 2 의 배열, 뒤는 요소를 풀어 합친 하나의 배열. '문자열' + 배열로 찍으면 둘 다 쉼표로 이어져 같아 보인다.</p>
         </details>
         <details>
-            <summary>4. 요즘은 어떤 순서로 선택하나?</summary>
-            <p>기본은 const, 값이 바뀌어야 하면 let, var 는 쓰지 않는다.</p>
+            <summary>4. const { key1, key2, ...remainObj } = obj 의 결과는?</summary>
+            <p>key1, key2 는 같은 이름의 속성 값, remainObj 는 나머지 속성들을 모은 새 객체.</p>
         </details>
         <details>
-            <summary>5. const 로 선언한 객체의 속성은 바꿀 수 있나?</summary>
-            <p>바꿀 수 있다. 변수에 다른 값을 다시 대입하는 것만 막힌다.</p>
+            <summary>5. ES6 class 와 prototype 의 관계는?</summary>
+            <p>class 는 prototype 방식을 보기 좋게 쓴 문법(문법적 설탕)이다. 메서드는 prototype 에 들어가 모든 객체가 공유한다.</p>
         </details>
         <details>
-            <summary>6. 화면이 하얗게 나올 때 가장 먼저 볼 곳은?</summary>
-            <p>브라우저 콘솔(F12)의 에러 메시지. 예: <code>Component</code> 를 <code>component</code> 로 잘못 import 해도 화면 전체가 비어 보인다.</p>
+            <summary>6. setTimeout 에 넘긴 일반 function 안에서 this.state 가 에러나는 이유는?</summary>
+            <p>일반 함수의 this 는 호출한 쪽이 정하는데, setTimeout 이 부르면 this 가 window 가 된다. window.state 는 없으므로 undefined 에서 속성을 읽다가 TypeError.</p>
         </details>
         <details>
-            <summary>7. [a, b] 와 [...a, ...b] 의 차이는?</summary>
-            <p>[a, b] 는 배열 두 개를 요소로 가진 2칸짜리 중첩 배열, [...a, ...b] 는 요소를 펼쳐서 하나로 합친 배열이다.</p>
+            <summary>7. 콜백 안에서 this 를 컴포넌트로 쓰는 3가지 방법은?</summary>
+            <p>바깥에서 this 를 변수에 담기(this_bind), 콜백에 .bind(this), 화살표 함수 사용(바깥 this 를 그대로 씀).</p>
         </details>
         <details>
-            <summary>8. 객체를 합치는 두 가지 방법은? 키가 겹치면?</summary>
-            <p>Object.assign({}, o1, o2) 와 {...o1, ...o2}. 둘 다 새 객체를 만들고, 겹치는 키는 뒤에 오는 값이 덮어쓴다.</p>
+            <summary>8. bind 는 왜 모든 함수에서 쓸 수 있나? bind 와 call 의 차이는?</summary>
+            <p>함수도 객체이고 모든 함수가 Function.prototype 의 메서드를 물려받기 때문. bind 는 this 가 고정된 새 함수를 돌려줄 뿐 실행하지 않고, call 은 바로 실행한다.</p>
         </details>
         <details>
-            <summary>9. const [x, y, ...rest] = arr 에서 rest 는?</summary>
-            <p>앞의 두 요소를 x, y 로 꺼낸 나머지 요소들을 모은 배열. 객체도 {a, ...rest} = obj 로 나머지 속성을 객체로 모은다.</p>
+            <summary>9. forEach 와 map 의 차이는?</summary>
+            <p>forEach 는 콜백의 return 을 버리고 undefined 를 돌려준다. map 은 콜백의 return 들로 같은 길이의 새 배열을 만든다.</p>
+        </details>
+        <details>
+            <summary>10. componentDidMount 에서 에러가 나면?</summary>
+            <p>React 가 앱 전체를 화면에서 내려 하얀 화면이 된다. F12 Console 에서 에러를 확인한다.</p>
+        </details>
+        <details>
+            <summary>11. 새 라이브러리를 설치했는데 import 에러가 계속 나면?</summary>
+            <p>개발 서버를 껐다 다시 켠다 (npm run dev). 그래도 안 되면 npm run dev -- --force.</p>
         </details>
 
         <h2>다음에 배울 것</h2>
         <ul>
-            <li>그 밖의 ES6 문법 : 화살표 함수, 클래스 등 (다음 예제)</li>
+            <li>React 의 이벤트 처리와 state 변경 (<code>setState</code>)</li>
+            <li>jQuery 대신 React 방식으로 input 값 다루기 (state, ref)</li>
+            <li>배열을 화면 목록으로 그리기 (<code>map</code> + <code>key</code>)</li>
         </ul>
 
-        <p><a href="./index.html">← 대문으로</a> | <a href="./react_study.html">React 스터디 목록</a></p>
+        <p><a href="./react_study.html">React 스터디 목록</a> | <a href="./react_study_01.html">← 1단락</a></p>
     </body>
 </html>
